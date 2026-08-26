@@ -15,7 +15,7 @@ async function pedir(ruta, opciones = {}) {
   return datos
 }
 
-export default function Usuarios({ sesion, onCerrarSesion }) {
+export default function Usuarios({ sesion, onCerrarSesion, onVolver }) {
   const [usuarios, setUsuarios] = useState([])
   const [formulario, setFormulario] = useState(null)
   const [eliminarId, setEliminarId] = useState(null)
@@ -95,6 +95,11 @@ export default function Usuarios({ sesion, onCerrarSesion }) {
           <h1 className="admin__titulo">Usuarios</h1>
         </div>
         <div className="admin__sesion">
+          {onVolver && (
+            <button className="admin__boton admin__boton--texto" type="button" onClick={onVolver}>
+              ← Volver al Dashboard
+            </button>
+          )}
           <span>
             {sesion.nombre} · {sesion.rol}
           </span>
