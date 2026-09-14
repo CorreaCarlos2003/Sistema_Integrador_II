@@ -43,6 +43,7 @@ export default function Login({ onLoginExitoso }) {
 
   return (
     <div className="login">
+        {/* Esto es una prueba */}
       <form className="login__formulario" onSubmit={manejarSubmit}>
         <h1 className="login__titulo">Iniciar sesión</h1>
 
