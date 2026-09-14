@@ -7,8 +7,8 @@ import './pages/Login/Login.css'
 
 const SECCIONES_PENDIENTES = {
   proyectos: 'Proyectos',
-  chat: 'Chat',
   roles: 'Roles y Permisos',
+  historial: 'Historial',
   reportes: 'Reportes',
 }
 

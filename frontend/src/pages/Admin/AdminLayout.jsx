@@ -1,24 +1,26 @@
 import { useState } from 'react'
 import './AdminLayout.css'
 import {
-  IconInicio,
-  IconProyectos,
-  IconChat,
-  IconUsuarios,
-  IconRoles,
-  IconReportes,
-  IconBuscar,
-  IconCampana,
-  IconAyuda,
+  IconLogoDocAI,
+  IconNavInicio,
+  IconNavProyectos,
+  IconNavUsuarios,
+  IconNavRoles,
+  IconNavHistorial,
+  IconNavReportes,
+  IconCalendario,
+  IconNotificacionLlena,
+  IconUsuarioSilueta,
+  IconPerfilFooter,
 } from '../../components/icons'
 
 const SECCIONES = [
-  { clave: 'inicio', etiqueta: 'Inicio', Icono: IconInicio },
-  { clave: 'proyectos', etiqueta: 'Proyectos', Icono: IconProyectos },
-  { clave: 'chat', etiqueta: 'Chat', Icono: IconChat },
-  { clave: 'usuarios', etiqueta: 'Gestión de Usuarios', Icono: IconUsuarios },
-  { clave: 'roles', etiqueta: 'Roles y Permisos', Icono: IconRoles },
-  { clave: 'reportes', etiqueta: 'Reportes', Icono: IconReportes },
+  { clave: 'inicio', etiqueta: 'Inicio', Icono: IconNavInicio },
+  { clave: 'proyectos', etiqueta: 'Proyectos', Icono: IconNavProyectos },
+  { clave: 'usuarios', etiqueta: 'Gestión de Usuarios', Icono: IconNavUsuarios },
+  { clave: 'roles', etiqueta: 'Roles y Permisos', Icono: IconNavRoles },
+  { clave: 'historial', etiqueta: 'Historial', Icono: IconNavHistorial },
+  { clave: 'reportes', etiqueta: 'Reportes', Icono: IconNavReportes },
 ]
 
 export default function AdminLayout({ activo, onNavegar, sesion, onCerrarSesion, children }) {
@@ -27,11 +29,15 @@ export default function AdminLayout({ activo, onNavegar, sesion, onCerrarSesion,
   return (
     <div className="panel">
       <aside className="panel__sidebar">
-        <div className="panel__marca">DocAI</div>
+        <div className="panel__marca">
+          <div className="panel__marca-caja">
+            <span className="panel__marca-esquina" />
+            <IconLogoDocAI className="panel__marca-icono" />
+          </div>
+          <span className="panel__marca-texto">doc/ai</span>
+        </div>
 
-        <button className="panel__nuevo" type="button" onClick={() => onNavegar?.('proyectos')}>
-          <span className="panel__nuevo-icono">+</span> Nuevo Documento
-        </button>
+        <p className="panel__nav-etiqueta">Navegación</p>
 
         <nav className="panel__nav">
           {SECCIONES.map(({ clave, etiqueta, Icono }) => (
@@ -48,7 +54,9 @@ export default function AdminLayout({ activo, onNavegar, sesion, onCerrarSesion,
         </nav>
 
         <div className="panel__perfil">
-          <div className="panel__avatar">{sesion?.nombre?.[0]?.toUpperCase() ?? 'A'}</div>
+          <span className="panel__avatar">
+            <IconPerfilFooter />
+          </span>
           <div className="panel__perfil-info">
             <strong>{sesion?.nombre ?? 'Administrador'}</strong>
             <span>{sesion?.rol ?? 'Administrador del Sistema'}</span>
@@ -58,18 +66,18 @@ export default function AdminLayout({ activo, onNavegar, sesion, onCerrarSesion,
 
       <div className="panel__cuerpo">
         <header className="panel__topbar">
-          <div className="panel__buscador">
-            <IconBuscar />
-            <input type="text" placeholder="Buscar documentos, proyectos..." />
-          </div>
+          <button className="panel__filtro" type="button">
+            <IconCalendario />
+            <span className="panel__filtro-texto">
+              <small>Últimos 30</small>
+              <small>días</small>
+            </span>
+          </button>
 
           <div className="panel__topbar-acciones">
             <button className="panel__icono-boton" type="button" title="Notificaciones" aria-label="Notificaciones">
-              <IconCampana />
+              <IconNotificacionLlena />
               <span className="panel__punto-alerta" />
-            </button>
-            <button className="panel__icono-boton" type="button" title="Ayuda" aria-label="Ayuda">
-              <IconAyuda />
             </button>
 
             <div className="panel__cuenta">
@@ -77,9 +85,11 @@ export default function AdminLayout({ activo, onNavegar, sesion, onCerrarSesion,
                 type="button"
                 className="panel__cuenta-boton"
                 onClick={() => setMenuAbierto((v) => !v)}
+                aria-label="Ajustes del perfil"
               >
-                <div className="panel__avatar panel__avatar--sm">{sesion?.nombre?.[0]?.toUpperCase() ?? 'A'}</div>
-                <span>Ajustes del perfil</span>
+                <span className="panel__avatar panel__avatar--sm">
+                  <IconUsuarioSilueta />
+                </span>
               </button>
 
               {menuAbierto && (
