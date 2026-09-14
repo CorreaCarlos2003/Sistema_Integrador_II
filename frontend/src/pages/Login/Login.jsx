@@ -44,6 +44,7 @@ export default function Login({ onLoginExitoso }) {
   return (
     <div className="login">
         {/* Esto es una prueba */}
+        {/* Esto es una prueba numero 2 */}
       <form className="login__formulario" onSubmit={manejarSubmit}>
         <h1 className="login__titulo">Iniciar sesión</h1>
 
