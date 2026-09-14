@@ -3,6 +3,7 @@ import Login from './pages/Login/Login'
 import AdminLayout from './pages/Admin/AdminLayout'
 import Dashboard from './pages/Admin/Dashboard'
 import Usuarios from './pages/Admin/Usuarios'
+import Proyectos from './pages/Proyectos/Proyectos'
 import './pages/Login/Login.css'
 
 const SECCIONES_PENDIENTES = {
@@ -56,6 +57,8 @@ function App() {
     <AdminLayout activo={seccion} onNavegar={setSeccion} sesion={sesion} onCerrarSesion={cerrarSesion}>
       {seccion === 'inicio' ? (
         <Dashboard sesion={sesion} />
+      ) : seccion === 'proyectos' ? (
+        <Proyectos sesion={sesion} />
       ) : (
         <Proximamente titulo={SECCIONES_PENDIENTES[seccion] ?? ''} />
       )}
