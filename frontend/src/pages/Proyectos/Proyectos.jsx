@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import ProyectosHeader from './components/ProyectosHeader'
 import ProyectoGrid from './components/ProyectoGrid'
 import ProyectoTable from './components/ProyectoTable'
+import ModalNuevoProyecto from './components/ModalNuevoProyecto'
 import './Proyectos.css'
 
 export default function Proyectos({ onSeleccionarProyecto }) {
@@ -12,6 +13,7 @@ export default function Proyectos({ onSeleccionarProyecto }) {
   // Estados para filtros y paginación
   const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('Todos')
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [vista, setVista] = useState('cards') // 'cards' o 'lista'
   const [page, setPage] = useState(1)
   const [limit] = useState(6)
@@ -116,6 +118,7 @@ export default function Proyectos({ onSeleccionarProyecto }) {
         onCambioFiltroEstado={(val) => { setFiltroEstado(val); setPage(1); }}
         vista={vista}
         onCambioVista={setVista}
+        onNuevoProyecto={() => setIsModalOpen(true)}
       />
 
       {loading && <div className="proyectos-loader">Cargando proyectos...</div>}
@@ -140,6 +143,15 @@ export default function Proyectos({ onSeleccionarProyecto }) {
 
       {/* Footer y Paginación */}
       {!loading && !error && renderPagination()}
+
+      <ModalNuevoProyecto
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onProjectCreated={() => {
+          setPage(1)
+          fetchProyectos()
+        }}
+      />
     </div>
   )
 }

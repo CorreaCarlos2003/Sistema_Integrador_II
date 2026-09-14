@@ -5,6 +5,7 @@ export default function ProyectosHeader({
   onCambioFiltroEstado,
   vista,
   onCambioVista,
+  onNuevoProyecto
 }) {
   return (
     <header className="proyectos-header">
@@ -15,7 +16,7 @@ export default function ProyectosHeader({
             Administra todos los proyectos del sistema, sus responsables y su actividad operativa dentro de las bóvedas seguras DocAI.
           </p>
         </div>
-        <button className="proyectos-header__btn-nuevo">
+        <button className="proyectos-header__btn-nuevo" onClick={onNuevoProyecto}>
           <span>+ Nuevo Proyecto</span>
         </button>
       </div>
