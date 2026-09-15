@@ -4,3 +4,4 @@ pyodbc
 python-dotenv
 python-jose[cryptography]
 pydantic[email]
+sqlalchemy>=2.0.0
