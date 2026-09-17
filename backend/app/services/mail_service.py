@@ -48,6 +48,28 @@ def enviar_invitacion_usuario(nombre: str, correo: str, contrasena: str, rol: st
     _enviar(correo, "Bienvenido a DocAI - Datos de acceso", texto, html)
 
 
+def enviar_contrasena(nombre: str, correo: str, contrasena: str) -> None:
+    texto = (
+        f"Hola {nombre},\n\n"
+        "Solicitaste recuperar tu contraseña en DocAI.\n\n"
+        f"Tu contraseña es: {contrasena}\n\n"
+        "Si tú no solicitaste esto, comunícate con un administrador del sistema."
+    )
+
+    html = f"""
+    <div style="font-family: Arial, sans-serif; color: #2b2622; max-width: 480px;">
+      <h2 style="margin-bottom: 4px;">Recuperación de contraseña</h2>
+      <p>Hola <strong>{nombre}</strong>, solicitaste recuperar tu contraseña en DocAI.</p>
+      <table style="border-collapse: collapse; margin: 16px 0;">
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Contraseña</td><td><strong>{contrasena}</strong></td></tr>
+      </table>
+      <p>Si tú no solicitaste esto, comunícate con un administrador del sistema.</p>
+    </div>
+    """
+
+    _enviar(correo, "Recuperación de contraseña - DocAI", texto, html)
+
+
 def enviar_invitacion_proyecto(nombre: str, correo: str, proyecto_nombre: str, rol_proyecto: str, cargo: str | None) -> None:
     rol_legible = "Responsable" if rol_proyecto == "RESPONSABLE" else "Miembro"
 
