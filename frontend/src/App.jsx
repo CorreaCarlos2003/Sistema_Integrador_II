@@ -45,16 +45,6 @@ function App() {
     return <Inicio sesion={sesion} onCerrarSesion={cerrarSesion} />;
   }
 
-  if (seccion === "usuarios") {
-    return (
-      <Usuarios
-        sesion={sesion}
-        onCerrarSesion={cerrarSesion}
-        onVolver={() => setSeccion("inicio")}
-      />
-    );
-  }
-
   return (
     <AdminLayout
       activo={seccion}
@@ -66,6 +56,8 @@ function App() {
         <Dashboard sesion={sesion} />
       ) : seccion === "proyectos" ? (
         <Proyectos sesion={sesion} />
+      ) : seccion === "usuarios" ? (
+        <Usuarios sesion={sesion} />
       ) : (
         <Proximamente titulo={SECCIONES_PENDIENTES[seccion] ?? ""} />
       )}

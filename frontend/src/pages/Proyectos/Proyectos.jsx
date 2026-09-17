@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import ProyectosHeader from './components/ProyectosHeader'
 import ProyectoGrid from './components/ProyectoGrid'
 import ProyectoTable from './components/ProyectoTable'
+import ProyectoDetalle from './components/ProyectoDetalle'
+import ChatProyecto from './components/ChatProyecto'
 import ModalNuevoProyecto from './components/ModalNuevoProyecto'
 import './Proyectos.css'
 
@@ -9,7 +11,9 @@ export default function Proyectos({ onSeleccionarProyecto }) {
   const [proyectos, setProyectos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  
+  const [proyectoSeleccionado, setProyectoSeleccionado] = useState(null)
+  const [vistaProyecto, setVistaProyecto] = useState('detalle') // 'detalle' o 'chat'
+
   // Estados para filtros y paginación
   const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('Todos')
@@ -58,6 +62,12 @@ export default function Proyectos({ onSeleccionarProyecto }) {
     }, 300)
     return () => clearTimeout(timer)
   }, [fetchProyectos])
+
+  const seleccionarProyecto = (proyecto) => {
+    setProyectoSeleccionado(proyecto)
+    setVistaProyecto('detalle')
+    onSeleccionarProyecto?.(proyecto)
+  }
 
   const handlePageChange = (newPage) => {
     if (newPage > 0 && newPage <= totalPages) {
@@ -108,6 +118,25 @@ export default function Proyectos({ onSeleccionarProyecto }) {
     );
   }
 
+  if (proyectoSeleccionado) {
+    if (vistaProyecto === 'chat') {
+      return (
+        <ChatProyecto
+          proyecto={proyectoSeleccionado}
+          onVolver={() => setVistaProyecto('detalle')}
+        />
+      )
+    }
+
+    return (
+      <ProyectoDetalle
+        proyecto={proyectoSeleccionado}
+        onVolver={() => setProyectoSeleccionado(null)}
+        onIniciarChat={() => setVistaProyecto('chat')}
+      />
+    )
+  }
+
   return (
     <div className="proyectos-contenedor">
       {/* Cabecera con título, filtros y selector de vista */}
@@ -130,12 +159,12 @@ export default function Proyectos({ onSeleccionarProyecto }) {
           vista === 'cards' ? (
             <ProyectoGrid
               proyectos={proyectos}
-              onSeleccionarProyecto={onSeleccionarProyecto}
+              onSeleccionarProyecto={seleccionarProyecto}
             />
           ) : (
             <ProyectoTable
               proyectos={proyectos}
-              onSeleccionarProyecto={onSeleccionarProyecto}
+              onSeleccionarProyecto={seleccionarProyecto}
             />
           )
         )}

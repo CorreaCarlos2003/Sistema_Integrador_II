@@ -5,3 +5,11 @@ python-dotenv
 python-jose[cryptography]
 pydantic[email]
 sqlalchemy>=2.0.0
+python-docx
+langchain-core
+langchain-text-splitters
+langchain-chroma
+langchain-huggingface
+chromadb
+sentence-transformers
+python-multipart
