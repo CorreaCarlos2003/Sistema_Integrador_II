@@ -88,6 +88,11 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onP
   const [errorDocumentos, setErrorDocumentos] = useState(null)
   const [subiendo, setSubiendo] = useState(false)
   const [toastState, setToastState] = useState({ visible: false, type: 'info', message: '' })
+  
+  const [docAEliminar, setDocAEliminar] = useState(null)
+  const [modalEliminarDocAbierto, setModalEliminarDocAbierto] = useState(false)
+  const [eliminandoDoc, setEliminandoDoc] = useState(false)
+  
   const inputArchivoRef = useRef(null)
 
   const showToast = (type, message, duration = 0) => {
@@ -213,15 +218,27 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onP
     }
   }
 
-  const handleEliminarDocumento = async (idDocumento) => {
+  const confirmarEliminarDocumento = (doc) => {
+    setDocAEliminar(doc)
+    setModalEliminarDocAbierto(true)
+  }
+
+  const handleEliminarDocumento = async () => {
+    if (!docAEliminar) return
+    setEliminandoDoc(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/proyectos/${proyecto.id}/documentos/${idDocumento}`, {
+      const response = await fetch(`${API_BASE_URL}/proyectos/${proyecto.id}/documentos/${docAEliminar.id}`, {
         method: 'DELETE',
       })
       if (!response.ok) throw new Error('No se pudo eliminar el documento')
-      setDocumentos((prev) => prev.filter((doc) => doc.id !== idDocumento))
+      setDocumentos((prev) => prev.filter((doc) => doc.id !== docAEliminar.id))
+      showToast('success', 'Documento eliminado con éxito', 4000)
     } catch (err) {
-      setErrorDocumentos(err.message)
+      showToast('error', err.message, 5000)
+    } finally {
+      setEliminandoDoc(false)
+      setModalEliminarDocAbierto(false)
+      setDocAEliminar(null)
     }
   }
 
@@ -452,7 +469,7 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onP
                       type="button"
                       className="proyecto-detalle__btn-icono"
                       title="Eliminar"
-                      onClick={() => handleEliminarDocumento(doc.id)}
+                      onClick={() => confirmarEliminarDocumento(doc)}
                     >
                       <IconEliminar />
                     </button>
@@ -491,7 +508,7 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onP
         </div>
       )}
 
-      {/* Modal de Confirmación de Eliminación */}
+      {/* Modal de Confirmación de Eliminación de Proyecto */}
       {modalEliminarAbierto && (
         <div className="modal-overlay" style={{ zIndex: 1050 }}>
           <div className="modal-contenido" style={{ maxWidth: '420px', padding: '24px' }}>
@@ -533,7 +550,47 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onP
         </div>
       )}
 
-      {/* Modal de Éxito al Eliminar */}
+      {/* Modal de Confirmación de Eliminación de Documento */}
+      {modalEliminarDocAbierto && docAEliminar && (
+        <div className="modal-overlay" style={{ zIndex: 1050 }}>
+          <div className="modal-contenido" style={{ maxWidth: '420px', padding: '24px' }}>
+            <div className="modal-header" style={{ marginBottom: '16px' }}>
+              <h2 style={{ color: '#ef4444', fontSize: '20px', fontWeight: '600' }}>Eliminar Documento</h2>
+              <button className="modal-close" onClick={() => setModalEliminarDocAbierto(false)}>&times;</button>
+            </div>
+            
+            <div style={{ padding: '0 0 24px 0', fontSize: '15px', color: '#334155', lineHeight: '1.5' }}>
+              <p style={{ margin: '0' }}>¿Estás seguro de que deseas eliminar el documento <strong>{docAEliminar.nombre}</strong>?</p>
+              <div style={{ marginTop: '16px', backgroundColor: '#fef2f2', borderLeft: '4px solid #ef4444', padding: '12px', borderRadius: '4px', color: '#991b1b', fontSize: '13.5px' }}>
+                <strong style={{ display: 'block', marginBottom: '4px' }}>Atención:</strong>
+                Esta acción no se puede deshacer. Los fragmentos indexados asociados a este documento también serán eliminados de la base de conocimiento.
+              </div>
+            </div>
+            
+            <div className="modal-footer" style={{ marginTop: '0', paddingTop: '16px', borderTop: '1px solid #e2e8f0' }}>
+              <button 
+                type="button" 
+                className="btn-cancel" 
+                onClick={() => setModalEliminarDocAbierto(false)}
+                disabled={eliminandoDoc}
+              >
+                Cancelar
+              </button>
+              <button 
+                type="button" 
+                className="btn-submit" 
+                style={{ backgroundColor: '#ef4444', color: '#ffffff' }}
+                onClick={handleEliminarDocumento}
+                disabled={eliminandoDoc}
+              >
+                {eliminandoDoc ? 'Eliminando...' : 'Eliminar Documento'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Éxito al Eliminar (Proyecto) */}
       <ModalExito 
         isOpen={modalExitoAbierto}
         onClose={handleSuccessClose}
