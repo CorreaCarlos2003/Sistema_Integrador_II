@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { getInitials, getAvatarColors } from '../../../utils/avatarUtils'
 import ModalExito from './ModalExito'
+import Toast from './Toast'
 import './ProyectoDetalle.css'
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
@@ -86,7 +87,19 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onP
   const [cargandoDocumentos, setCargandoDocumentos] = useState(true)
   const [errorDocumentos, setErrorDocumentos] = useState(null)
   const [subiendo, setSubiendo] = useState(false)
+  const [toastState, setToastState] = useState({ visible: false, type: 'info', message: '' })
   const inputArchivoRef = useRef(null)
+
+  const showToast = (type, message, duration = 0) => {
+    setToastState({ visible: true, type, message })
+    if (duration > 0) {
+      setTimeout(() => {
+        setToastState(prev => ({ ...prev, visible: false }))
+      }, duration)
+    }
+  }
+
+  const hideToast = () => setToastState(prev => ({ ...prev, visible: false }))
 
   const estado = (proyecto.estado || '').toLowerCase()
   const miembros = proyecto.miembros || []
@@ -175,6 +188,8 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onP
 
     setSubiendo(true)
     setErrorDocumentos(null)
+    showToast('loading', 'Subiendo e indexando documento...')
+    
     try {
       const formData = new FormData()
       formData.append('archivo', archivo)
@@ -190,8 +205,9 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onP
       }
 
       await fetchDocumentos()
+      showToast('success', 'Documento indexado con éxito', 4000)
     } catch (err) {
-      setErrorDocumentos(err.message)
+      showToast('error', err.message, 5000)
     } finally {
       setSubiendo(false)
     }
@@ -522,6 +538,14 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onP
         isOpen={modalExitoAbierto}
         onClose={handleSuccessClose}
         mensaje="El proyecto se ha eliminado correctamente."
+      />
+
+      {/* Toast Notification para acciones (subir documento) */}
+      <Toast 
+        visible={toastState.visible}
+        type={toastState.type}
+        message={toastState.message}
+        onClose={hideToast}
       />
     </div>
   )
