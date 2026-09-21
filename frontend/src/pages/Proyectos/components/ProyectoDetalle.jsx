@@ -408,7 +408,7 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onP
           <div className="proyecto-detalle__tabla-wrap">
             <div className="proyecto-detalle__tabla-header">
               <div className="proyecto-detalle__col-nombre">NOMBRE DE EXPEDIENTE</div>
-              <div>FRAGMENTOS INDEXADOS</div>
+              <div style={{ textAlign: 'center' }}>FRAGMENTOS INDEXADOS</div>
               <div>ESTADO</div>
               <div>FECHA DE SUBIDA</div>
               <div className="proyecto-detalle__col-comandos">COMANDOS</div>
@@ -432,7 +432,7 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onP
                     </div>
                   </div>
 
-                  <div className="proyecto-detalle__col-dimensiones">
+                  <div className="proyecto-detalle__col-dimensiones" style={{ alignItems: 'center' }}>
                     <span>{doc.chunks_indexados}</span>
                   </div>
 
