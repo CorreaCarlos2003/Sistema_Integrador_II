@@ -133,6 +133,11 @@ export default function Proyectos({ onSeleccionarProyecto }) {
         proyecto={proyectoSeleccionado}
         onVolver={() => setProyectoSeleccionado(null)}
         onIniciarChat={() => setVistaProyecto('chat')}
+        onProyectoEliminado={() => {
+          setProyectoSeleccionado(null)
+          setPage(1)
+          fetchProyectos()
+        }}
       />
     )
   }

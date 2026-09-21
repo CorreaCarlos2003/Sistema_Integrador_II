@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { getInitials, getAvatarColors } from '../../../utils/avatarUtils'
+import ModalExito from './ModalExito'
 import './ProyectoDetalle.css'
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
@@ -77,7 +78,7 @@ function formatFecha(fechaStr) {
   return new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short', year: 'numeric' }).format(fecha)
 }
 
-export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat }) {
+export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onProyectoEliminado }) {
   const [tab, setTab] = useState('documentos')
   const [busqueda, setBusqueda] = useState('')
 
@@ -89,6 +90,56 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat }) {
 
   const estado = (proyecto.estado || '').toLowerCase()
   const miembros = proyecto.miembros || []
+  
+  // Estados para menú y modales
+  const [menuAbierto, setMenuAbierto] = useState(false)
+  const [modalEliminarAbierto, setModalEliminarAbierto] = useState(false)
+  const [modalExitoAbierto, setModalExitoAbierto] = useState(false)
+  const [eliminando, setEliminando] = useState(false)
+  const [errorEliminar, setErrorEliminar] = useState(null)
+  const menuRef = useRef(null)
+
+  // Cerrar menú al hacer clic fuera
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuAbierto(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [menuRef])
+
+  const handleEliminarProyecto = async () => {
+    setEliminando(true)
+    setErrorEliminar(null)
+    try {
+      const response = await fetch(`${API_BASE_URL}/proyectos/${proyecto.id}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.detail || 'Error al eliminar el proyecto')
+      }
+      setModalEliminarAbierto(false)
+      setModalExitoAbierto(true)
+    } catch (err) {
+      setErrorEliminar(err.message)
+    } finally {
+      setEliminando(false)
+    }
+  }
+
+  const handleSuccessClose = () => {
+    setModalExitoAbierto(false)
+    if (onProyectoEliminado) {
+      onProyectoEliminado()
+    } else {
+      onVolver()
+    }
+  }
 
   const fetchDocumentos = async () => {
     setCargandoDocumentos(true)
@@ -213,9 +264,58 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat }) {
             </div>
           </div>
 
-          <button type="button" className="proyecto-detalle__btn-menu" aria-label="Menú contextual">
-            <IconPuntos />
-          </button>
+          <div className="proyecto-detalle__menu-container" ref={menuRef} style={{ position: 'relative' }}>
+            <button 
+              type="button" 
+              className="proyecto-detalle__btn-menu" 
+              aria-label="Menú contextual"
+              onClick={() => setMenuAbierto(!menuAbierto)}
+            >
+              <IconPuntos />
+            </button>
+            
+            {menuAbierto && (
+              <div className="proyecto-detalle__dropdown" style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '4px',
+                backgroundColor: 'var(--bg-card, #ffffff)',
+                border: '1px solid var(--border-color, #e2e8f0)',
+                borderRadius: '8px',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                zIndex: 10,
+                minWidth: '160px',
+                padding: '4px 0'
+              }}>
+                <button 
+                  className="proyecto-detalle__dropdown-item"
+                  onClick={() => {
+                    setMenuAbierto(false)
+                    setModalEliminarAbierto(true)
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    width: '100%',
+                    padding: '8px 16px',
+                    background: 'none',
+                    border: 'none',
+                    color: '#ef4444',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <IconEliminar />
+                  Eliminar Proyecto
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -374,6 +474,55 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat }) {
           )}
         </div>
       )}
+
+      {/* Modal de Confirmación de Eliminación */}
+      {modalEliminarAbierto && (
+        <div className="modal-overlay" style={{ zIndex: 1050 }}>
+          <div className="modal-contenido" style={{ maxWidth: '420px', padding: '24px' }}>
+            <div className="modal-header" style={{ marginBottom: '16px' }}>
+              <h2 style={{ color: '#ef4444', fontSize: '20px', fontWeight: '600' }}>Eliminar Proyecto</h2>
+              <button className="modal-close" onClick={() => setModalEliminarAbierto(false)}>&times;</button>
+            </div>
+            
+            {errorEliminar && <div className="modal-error" style={{ marginBottom: '16px' }}>{errorEliminar}</div>}
+            
+            <div style={{ padding: '0 0 24px 0', fontSize: '15px', color: '#334155', lineHeight: '1.5' }}>
+              <p style={{ margin: '0' }}>¿Estás seguro de que deseas eliminar <strong>{proyecto.nombre}</strong>?</p>
+              <div style={{ marginTop: '16px', backgroundColor: '#fef2f2', borderLeft: '4px solid #ef4444', padding: '12px', borderRadius: '4px', color: '#991b1b', fontSize: '13.5px' }}>
+                <strong style={{ display: 'block', marginBottom: '4px' }}>Atención:</strong>
+                Esta acción no se puede deshacer. Se eliminarán permanentemente el proyecto y todos sus documentos asociados.
+              </div>
+            </div>
+            
+            <div className="modal-footer" style={{ marginTop: '0', paddingTop: '16px', borderTop: '1px solid #e2e8f0' }}>
+              <button 
+                type="button" 
+                className="btn-cancel" 
+                onClick={() => setModalEliminarAbierto(false)}
+                disabled={eliminando}
+              >
+                Cancelar
+              </button>
+              <button 
+                type="button" 
+                className="btn-submit" 
+                style={{ backgroundColor: '#ef4444', color: '#ffffff' }}
+                onClick={handleEliminarProyecto}
+                disabled={eliminando}
+              >
+                {eliminando ? 'Eliminando...' : 'Eliminar Proyecto'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Éxito al Eliminar */}
+      <ModalExito 
+        isOpen={modalExitoAbierto}
+        onClose={handleSuccessClose}
+        mensaje="El proyecto se ha eliminado correctamente."
+      />
     </div>
   )
 }
