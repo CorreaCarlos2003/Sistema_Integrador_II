@@ -18,3 +18,4 @@ class Proyecto(Base):
 
     usuarios = relationship("UsuarioProyecto", back_populates="proyecto", cascade="all, delete-orphan")
     documentos = relationship("Documento", back_populates="proyecto", cascade="all, delete-orphan")
+    detalle = relationship("ProyectoDetalle", back_populates="proyecto", cascade="all, delete-orphan", uselist=False)

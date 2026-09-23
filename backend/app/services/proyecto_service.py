@@ -1,16 +1,21 @@
+from datetime import datetime
 from math import ceil
 from typing import List, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.proyecto import Proyecto
+from app.models.proyecto_detalle import ProyectoDetalle
+from app.models.usuario_proyecto import UsuarioProyecto
 from app.repositories.proyecto_repository import ProyectoRepository
+from app.repositories.usuario_repository import UsuarioRepository
 from app.schemas.proyecto import ProyectoCrear, ProyectoEditar, ProyectoEstado, PaginatedProyectosResponse, \
     UsuarioResumen, ProyectoCardResponse
 
 
 class ProyectoService:
     def __init__(self, db: Session):
+        self.db = db
         self.repo = ProyectoRepository(db)
 
     def listar_proyectos(self) -> List[Proyecto]:
@@ -26,6 +31,14 @@ class ProyectoService:
         return proyecto
 
     def crear_proyecto(self, datos: ProyectoCrear) -> Proyecto:
+        # Validar si el responsable existe
+        usuario_repo = UsuarioRepository(self.db)
+        responsable = usuario_repo.obtener_por_id(datos.responsable_id)
+        if not responsable:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Usuario responsable con ID {datos.responsable_id} no encontrado",
+            )
 
         estado_input = datos.estado.strip() if datos.estado else "Por iniciar"
 
@@ -37,6 +50,20 @@ class ProyectoService:
             descripcion=datos.descripcion.strip() if datos.descripcion else None,
             estado=estado_input,
         )
+        
+        relacion_responsable = UsuarioProyecto(
+            usuario_id=datos.responsable_id,
+            rol_proyecto="RESPONSABLE",
+            cargo=datos.cargo_responsable
+        )
+        nuevo.usuarios.append(relacion_responsable)
+        
+        detalle = ProyectoDetalle(
+            fecha_inicio=datetime.now(),
+            fecha_fin=datos.fecha_fin
+        )
+        nuevo.detalle = detalle
+        
         return self.repo.guardar(nuevo)
 
     def editar_proyecto(self, id_proyecto: int, datos: ProyectoEditar) -> Proyecto:
@@ -47,13 +74,27 @@ class ProyectoService:
         if datos.descripcion is not None:
             proyecto.descripcion = datos.descripcion.strip()
         if datos.estado is not None:
-            proyecto.estado = datos.estado.strip()
+            estado_anterior = proyecto.estado.lower() if proyecto.estado else ""
+            nuevo_estado = datos.estado.strip()
+            proyecto.estado = nuevo_estado
+            
+            if nuevo_estado.lower() == "finalizado" and estado_anterior != "finalizado":
+                if proyecto.detalle:
+                    proyecto.detalle.fecha_real_fin = datetime.now()
 
         return self.repo.guardar(proyecto)
 
     def cambiar_estado(self, id_proyecto: int, datos: ProyectoEstado) -> Proyecto:
         proyecto = self.obtener_por_id(id_proyecto)
-        proyecto.estado = datos.estado.strip()
+        
+        estado_anterior = proyecto.estado.lower() if proyecto.estado else ""
+        nuevo_estado = datos.estado.strip()
+        proyecto.estado = nuevo_estado
+        
+        if nuevo_estado.lower() == "finalizado" and estado_anterior != "finalizado":
+            if proyecto.detalle:
+                proyecto.detalle.fecha_real_fin = datetime.now()
+                
         return self.repo.guardar(proyecto)
 
     def eliminar_proyecto(self, id_proyecto: int) -> dict:
@@ -76,22 +117,22 @@ class ProyectoService:
         items = []
         for p in proyectos_db:
             # Miembros asignados al proyecto
-            miembros = [
-                UsuarioResumen(
-                    id=u.id,
-                    nombre=(u.nombre or "").strip(),
-                    rol=(u.rol or "").strip(),
-                )
-                for u in p.usuarios
-            ]
-
-            # Seleccionar responsable: busca rol líder/jefe/admin, o toma el primero
+            miembros = []
             responsable = None
-            if miembros:
-                responsable = next(
-                    (m for m in miembros if m.rol.lower() in ["jefe", "lider", "admin"]),
-                    miembros[0],
+            
+            for up in p.usuarios:
+                if not up.usuario:
+                    continue
+                usuario_resumen = UsuarioResumen(
+                    id=up.usuario.id,
+                    nombre=(up.usuario.nombre or "").strip(),
+                    rol=(up.usuario.rol or "").strip(),
+                    cargo=up.cargo
                 )
+                miembros.append(usuario_resumen)
+                
+                if up.rol_proyecto == "RESPONSABLE":
+                    responsable = usuario_resumen
 
             # Código con padding PRJ-001, PRJ-002...
             codigo = f"PRJ-{str(p.id).zfill(3)}"

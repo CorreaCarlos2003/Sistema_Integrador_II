@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, List
 from pydantic import BaseModel, Field, EmailStr
 
@@ -9,6 +9,9 @@ class ProyectoBase(BaseModel):
 
 class ProyectoCrear(ProyectoBase):
     estado: Optional[str] = "Por iniciar"
+    responsable_id: int = Field(..., description="ID del usuario responsable")
+    cargo_responsable: Optional[str] = Field(None, description="Cargo del responsable en el proyecto")
+    fecha_fin: Optional[date] = Field(None, description="Fecha estimada de fin del proyecto")
 
 
 class ProyectoEditar(BaseModel):
@@ -36,6 +39,7 @@ class UsuarioResumen(BaseModel):
     id: int
     nombre: str
     rol: str
+    cargo: Optional[str] = None
 
     class Config:
         from_attributes = True
