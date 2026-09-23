@@ -16,7 +16,7 @@
   background-color: #ffffff;
   border-radius: 8px;
   width: 100%;
-  max-width: 500px;
+  max-width: 700px;
   padding: 32px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   position: relative;
@@ -72,9 +72,13 @@
 }
 
 .modal-form {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 20px;
+}
+
+.form-group-full {
+  grid-column: 1 / -1;
 }
 
 .form-group {
@@ -116,6 +120,7 @@
 }
 
 .modal-footer {
+  grid-column: 1 / -1;
   display: flex;
   justify-content: flex-end;
   gap: 12px;
