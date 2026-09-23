@@ -26,10 +26,16 @@ class ProyectoService:
         return proyecto
 
     def crear_proyecto(self, datos: ProyectoCrear) -> Proyecto:
+
+        estado_input = datos.estado.strip() if datos.estado else "Por iniciar"
+
+        if estado_input.lower() == "por iniciar":
+            estado_input = "Por iniciar"
+
         nuevo = Proyecto(
             nombre=datos.nombre.strip(),
-            descripción=datos.descripción.strip() if datos.descripción else None,
-            estado=datos.estado.strip() if datos.estado else "Activo",
+            descripcion=datos.descripcion.strip() if datos.descripcion else None,
+            estado=estado_input,
         )
         return self.repo.guardar(nuevo)
 
@@ -38,8 +44,8 @@ class ProyectoService:
 
         if datos.nombre is not None:
             proyecto.nombre = datos.nombre.strip()
-        if datos.descripción is not None:
-            proyecto.descripción = datos.descripción.strip()
+        if datos.descripcion is not None:
+            proyecto.descripcion = datos.descripcion.strip()
         if datos.estado is not None:
             proyecto.estado = datos.estado.strip()
 
@@ -95,9 +101,9 @@ class ProyectoService:
                     id=p.id,
                     codigo=codigo,
                     nombre=p.nombre,
-                    descripción=p.descripción,
+                    descripcion=p.descripcion,
                     estado=p.estado,
-                    fecha_creación=p.fecha_creación,
+                    fecha_creacion=p.fecha_creacion,
                     responsable=responsable,
                     miembros=miembros,
                     total_documentos=0,  # Conectar al count real cuando exista la tabla

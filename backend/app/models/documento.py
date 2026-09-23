@@ -12,6 +12,6 @@ class Documento(Base):
     nombre = Column(String(255), nullable=False)
     ruta_archivo = Column(String(500), nullable=False)
     chunks_indexados = Column(Integer, nullable=False, default=0)
-    fecha_subida = Column(DateTime, nullable=False, server_default=func.sysdatetime())
+    fecha_subida = Column(DateTime, nullable=False, server_default=func.now())
 
-    proyecto = relationship("Proyecto", backref="documentos")
+    proyecto = relationship("Proyecto", back_populates="documentos")
