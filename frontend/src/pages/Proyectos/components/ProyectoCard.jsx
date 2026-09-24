@@ -82,8 +82,8 @@ export default function ProyectoCard({ proyecto, onSeleccionar, onArchivar, onEl
 
       <div className="proyecto-card__body">
         <h3 className="proyecto-card__titulo">{proyecto.nombre}</h3>
-        {proyecto.descripción && (
-          <p className="proyecto-card__descripcion">{proyecto.descripción}</p>
+        {proyecto.descripcion && (
+          <p className="proyecto-card__descripcion">{proyecto.descripcion}</p>
         )}
       </div>
 
@@ -95,7 +95,7 @@ export default function ProyectoCard({ proyecto, onSeleccionar, onArchivar, onEl
               <div className="proyecto-card__responsable">
                 {renderAvatar(proyecto.responsable)}
                 <span className="proyecto-card__responsable-name">
-                  {proyecto.responsable.nombre} <span className="proyecto-card__responsable-rol">({proyecto.responsable.rol || 'Jefe'})</span>
+                  {proyecto.responsable.nombre} <span className="proyecto-card__responsable-rol">({proyecto.responsable.cargo || 'Responsable'})</span>
                 </span>
               </div>
             ) : (
@@ -156,7 +156,7 @@ export default function ProyectoCard({ proyecto, onSeleccionar, onArchivar, onEl
         </div>
         <div className="proyecto-card__footer-right">
           <div className="proyecto-card__fecha-col">
-            {formatFecha(proyecto.fecha_creación)}
+            {formatFecha(proyecto.fecha_creacion)}
           </div>
         </div>
       </div>

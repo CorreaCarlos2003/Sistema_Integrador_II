@@ -184,8 +184,8 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
               </span>
             </div>
 
-            {proyecto.descripción && (
-              <p className="proyecto-detalle__descripcion">{proyecto.descripción}</p>
+            {proyecto.descripcion && (
+              <p className="proyecto-detalle__descripcion">{proyecto.descripcion}</p>
             )}
 
             <div className="proyecto-detalle__meta">
@@ -199,7 +199,7 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
               <span className="proyecto-detalle__meta-sep">•</span>
               <span className="proyecto-detalle__meta-item">
                 <IconCalendarioMini />
-                Creado: <strong>{formatFecha(proyecto.fecha_creación)}</strong>
+                Creado: <strong>{formatFecha(proyecto.fecha_creacion)}</strong>
               </span>
               {proyecto.fecha_fin && (
                 <>

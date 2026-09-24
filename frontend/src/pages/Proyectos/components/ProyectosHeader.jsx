@@ -45,10 +45,10 @@ export default function ProyectosHeader({
               onChange={(e) => onCambioFiltroEstado(e.target.value)}
             >
               <option value="Todos">Todos</option>
-              <option value="Activo">Activo</option>
-              <option value="Pausado">Pausado</option>
-              <option value="Archivado">Archivado</option>
-              <option value="Inactivo">Inactivo</option>
+              <option value="Por iniciar">Por iniciar</option>
+              <option value="En proceso">En proceso</option>
+              <option value="Postergado">Postergado</option>
+              <option value="Finalizado">Finalizado</option>
             </select>
           </label>
         </div>

@@ -1,5 +1,5 @@
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, func
-from sqlalchemy.orm import backref, relationship
+from sqlalchemy.orm import relationship
 
 from app.database.conexion import Base
 
@@ -12,9 +12,6 @@ class Documento(Base):
     nombre = Column(String(255), nullable=False)
     ruta_archivo = Column(String(500), nullable=False)
     chunks_indexados = Column(Integer, nullable=False, default=0)
-    fecha_subida = Column(DateTime, nullable=False, server_default=func.sysdatetime())
+    fecha_subida = Column(DateTime, nullable=False, server_default=func.now())
 
-    # passive_deletes=True: al borrar un proyecto, deja que la FK con
-    # ON DELETE CASCADE en la base de datos elimine los documentos,
-    # en vez de que el ORM intente poner proyecto_id en NULL (columna NOT NULL).
-    proyecto = relationship("Proyecto", backref=backref("documentos", passive_deletes=True))
+    proyecto = relationship("Proyecto", back_populates="documentos")

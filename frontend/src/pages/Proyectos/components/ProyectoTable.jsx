@@ -60,9 +60,9 @@ export default function ProyectoTable({ proyectos, onSeleccionarProyecto, onArch
                   <div className="proyectos-tabla__proyecto-info">
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <span className="proyectos-tabla__nombre">{proyecto.nombre}</span>
-                      {proyecto.descripción && (
+                      {proyecto.descripcion && (
                         <span className="proyectos-tabla__descripcion" style={{ fontSize: '0.85em', color: '#666', marginTop: '4px', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {proyecto.descripción}
+                          {proyecto.descripcion}
                         </span>
                       )}
                     </div>
@@ -113,7 +113,7 @@ export default function ProyectoTable({ proyectos, onSeleccionarProyecto, onArch
 
                 <td>
                   <span style={{ fontSize: '0.9em', color: '#555' }}>
-                    {proyecto.fecha_creación ? new Date(proyecto.fecha_creación).toLocaleDateString() : '-'}
+                    {proyecto.fecha_creacion ? new Date(proyecto.fecha_creacion).toLocaleDateString() : '-'}
                   </span>
                 </td>
 

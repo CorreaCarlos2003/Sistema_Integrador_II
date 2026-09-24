@@ -34,7 +34,7 @@ class ProyectoRepository:
             skip: int = 0,
             limit: int = 6,
     ) -> Tuple[List[Proyecto], int]:
-        query = self.db.query(Proyecto).options(joinedload(Proyecto.usuarios))
+        query = self.db.query(Proyecto).options(joinedload(Proyecto.usuarios), joinedload(Proyecto.detalle))
 
         # Filtro por estado
         if estado and estado.lower() != "todos":
@@ -44,7 +44,7 @@ class ProyectoRepository:
         if busqueda:
             termino = f"%{busqueda.strip()}%"
             query = query.filter(
-                (Proyecto.nombre.ilike(termino)) | (Proyecto.descripción.ilike(termino))
+                (Proyecto.nombre.ilike(termino)) | (Proyecto.descripcion.ilike(termino))
             )
 
         total = query.distinct().count()
