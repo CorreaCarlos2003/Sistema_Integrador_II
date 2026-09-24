@@ -1,6 +1,7 @@
 import { getInitials, getAvatarColors } from '../../../utils/avatarUtils'
+import ProyectoAccionesMenu from './ProyectoAccionesMenu'
 
-export default function ProyectoTable({ proyectos, onSeleccionarProyecto }) {
+export default function ProyectoTable({ proyectos, onSeleccionarProyecto, onArchivarProyecto, onEliminarProyecto }) {
   if (!proyectos || proyectos.length === 0) {
     return (
       <div className="proyectos-vacio">
@@ -117,17 +118,20 @@ export default function ProyectoTable({ proyectos, onSeleccionarProyecto }) {
                 </td>
 
                 <td>
-                  <button
-                    type="button"
-                    className="proyectos-tabla__btn-accion"
-                    onClick={() => onSeleccionarProyecto && onSeleccionarProyecto(proyecto)}
-                    title="Ver detalles del proyecto"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <button
+                      type="button"
+                      className="proyectos-tabla__btn-accion"
+                      onClick={() => onSeleccionarProyecto && onSeleccionarProyecto(proyecto)}
+                      title="Ver detalles del proyecto"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    </button>
+                    <ProyectoAccionesMenu proyecto={proyecto} onArchivar={onArchivarProyecto} onEliminar={onEliminarProyecto} />
+                  </div>
                 </td>
               </tr>
             )

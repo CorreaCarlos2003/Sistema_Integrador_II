@@ -1,6 +1,7 @@
 import { getInitials, getAvatarColors } from '../../../utils/avatarUtils'
+import ProyectoAccionesMenu from './ProyectoAccionesMenu'
 
-export default function ProyectoCard({ proyecto, onSeleccionar }) {
+export default function ProyectoCard({ proyecto, onSeleccionar, onArchivar, onEliminar }) {
   const esActivo = proyecto.estado?.toLowerCase() === 'activo'
   const esPausado = proyecto.estado?.toLowerCase() === 'pausado'
   const esInactivo = proyecto.estado?.toLowerCase() === 'inactivo' || proyecto.estado?.toLowerCase() === 'archivado'
@@ -31,6 +32,15 @@ export default function ProyectoCard({ proyecto, onSeleccionar }) {
         {getInitials(miembro.nombre)}
       </div>
     )
+  }
+
+  const formatFechaLimite = (fechaStr) => {
+    if (!fechaStr) return ''
+    // fecha_fin llega como "YYYY-MM-DD"; se parsea en UTC para evitar
+    // que el huso horario local recorra el día al mostrarlo.
+    const [anio, mes, dia] = fechaStr.split('-').map(Number)
+    const fecha = new Date(Date.UTC(anio, mes - 1, dia))
+    return new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(fecha)
   }
 
   const formatFecha = (fechaStr) => {
@@ -66,13 +76,7 @@ export default function ProyectoCard({ proyecto, onSeleccionar }) {
             <span className="proyecto-card__badge-dot"></span>
             {proyecto.estado?.toUpperCase()}
           </span>
-          <button className="proyecto-card__btn-options" aria-label="Opciones" onClick={(e) => e.stopPropagation()}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="5" r="1"></circle>
-              <circle cx="12" cy="12" r="1"></circle>
-              <circle cx="12" cy="19" r="1"></circle>
-            </svg>
-          </button>
+          <ProyectoAccionesMenu proyecto={proyecto} onArchivar={onArchivar} onEliminar={onEliminar} />
         </div>
       </div>
 
@@ -108,6 +112,17 @@ export default function ProyectoCard({ proyecto, onSeleccionar }) {
               <polyline points="14 2 14 8 20 8" />
             </svg>
             <span className="proyecto-card__docs-count">{Number(proyecto.total_documentos || 0).toLocaleString()}</span> expedientes
+          </div>
+        </div>
+
+        <div className="proyecto-card__detail-row">
+          <span className="proyecto-card__detail-label">FECHA LÍMITE</span>
+          <div className="proyecto-card__detail-value">
+            {proyecto.fecha_fin ? (
+              <span>{formatFechaLimite(proyecto.fecha_fin)}</span>
+            ) : (
+              <span className="proyecto-card__no-data">Sin definir</span>
+            )}
           </div>
         </div>
 

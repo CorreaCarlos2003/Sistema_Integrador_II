@@ -163,3 +163,24 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.btn-peligro {
+  background-color: #dc2626;
+  color: #ffffff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-peligro:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn-peligro:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

@@ -21,7 +21,11 @@ class ProyectoRepository:
 
     def eliminar(self, proyecto: Proyecto) -> None:
         self.db.delete(proyecto)
-        self.db.commit()
+        try:
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
 
     def listar_cards(
             self,

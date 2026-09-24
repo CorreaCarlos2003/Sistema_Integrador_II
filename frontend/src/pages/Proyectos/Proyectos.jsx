@@ -5,7 +5,10 @@ import ProyectoTable from './components/ProyectoTable'
 import ProyectoDetalle from './components/ProyectoDetalle'
 import ChatProyecto from './components/ChatProyecto'
 import ModalNuevoProyecto from './components/ModalNuevoProyecto'
+import ConfirmarEliminarProyecto from './components/ConfirmarEliminarProyecto'
 import './Proyectos.css'
+
+const API_BASE_URL = 'http://127.0.0.1:8000'
 
 export default function Proyectos({ onSeleccionarProyecto }) {
   const [proyectos, setProyectos] = useState([])
@@ -23,6 +26,11 @@ export default function Proyectos({ onSeleccionarProyecto }) {
   const [limit] = useState(6)
   const [totalItems, setTotalItems] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
+
+  // Estado para eliminar/archivar proyectos
+  const [proyectoAEliminar, setProyectoAEliminar] = useState(null)
+  const [eliminando, setEliminando] = useState(false)
+  const [accionError, setAccionError] = useState(null)
 
   const fetchProyectos = useCallback(async () => {
     setLoading(true)
@@ -67,6 +75,54 @@ export default function Proyectos({ onSeleccionarProyecto }) {
     setProyectoSeleccionado(proyecto)
     setVistaProyecto('detalle')
     onSeleccionarProyecto?.(proyecto)
+  }
+
+  const archivarProyecto = async (proyecto) => {
+    setAccionError(null)
+    const nuevoEstado = proyecto.estado?.toLowerCase() === 'archivado' ? 'Activo' : 'Archivado'
+    try {
+      const response = await fetch(`${API_BASE_URL}/proyectos/${proyecto.id}/estado`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      })
+      if (!response.ok) throw new Error('No se pudo cambiar el estado del proyecto')
+
+      if (proyectoSeleccionado?.id === proyecto.id) {
+        setProyectoSeleccionado({ ...proyectoSeleccionado, estado: nuevoEstado })
+      }
+      fetchProyectos()
+    } catch (err) {
+      setAccionError(err.message)
+    }
+  }
+
+  const pedirEliminarProyecto = (proyecto) => {
+    setAccionError(null)
+    setProyectoAEliminar(proyecto)
+  }
+
+  const confirmarEliminarProyecto = async () => {
+    if (!proyectoAEliminar) return
+    setEliminando(true)
+    setAccionError(null)
+    try {
+      const response = await fetch(`${API_BASE_URL}/proyectos/${proyectoAEliminar.id}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) throw new Error('No se pudo eliminar el proyecto')
+
+      if (proyectoSeleccionado?.id === proyectoAEliminar.id) {
+        setProyectoSeleccionado(null)
+      }
+      setProyectoAEliminar(null)
+      setPage(1)
+      fetchProyectos()
+    } catch (err) {
+      setAccionError(err.message)
+    } finally {
+      setEliminando(false)
+    }
   }
 
   const handlePageChange = (newPage) => {
@@ -129,11 +185,22 @@ export default function Proyectos({ onSeleccionarProyecto }) {
     }
 
     return (
-      <ProyectoDetalle
-        proyecto={proyectoSeleccionado}
-        onVolver={() => setProyectoSeleccionado(null)}
-        onIniciarChat={() => setVistaProyecto('chat')}
-      />
+      <>
+        {accionError && <div className="proyectos-error">Error: {accionError}</div>}
+        <ProyectoDetalle
+          proyecto={proyectoSeleccionado}
+          onVolver={() => setProyectoSeleccionado(null)}
+          onIniciarChat={() => setVistaProyecto('chat')}
+          onArchivar={archivarProyecto}
+          onEliminar={pedirEliminarProyecto}
+        />
+        <ConfirmarEliminarProyecto
+          proyecto={proyectoAEliminar}
+          onCancelar={() => setProyectoAEliminar(null)}
+          onConfirmar={confirmarEliminarProyecto}
+          loading={eliminando}
+        />
+      </>
     )
   }
 
@@ -152,6 +219,7 @@ export default function Proyectos({ onSeleccionarProyecto }) {
 
       {loading && <div className="proyectos-loader">Cargando proyectos...</div>}
       {error && <div className="proyectos-error">Error: {error}</div>}
+      {accionError && <div className="proyectos-error">Error: {accionError}</div>}
 
       {/* Renderizado condicional según el modo de vista seleccionado */}
       <main className="proyectos-contenido">
@@ -160,11 +228,15 @@ export default function Proyectos({ onSeleccionarProyecto }) {
             <ProyectoGrid
               proyectos={proyectos}
               onSeleccionarProyecto={seleccionarProyecto}
+              onArchivarProyecto={archivarProyecto}
+              onEliminarProyecto={pedirEliminarProyecto}
             />
           ) : (
             <ProyectoTable
               proyectos={proyectos}
               onSeleccionarProyecto={seleccionarProyecto}
+              onArchivarProyecto={archivarProyecto}
+              onEliminarProyecto={pedirEliminarProyecto}
             />
           )
         )}
@@ -180,6 +252,13 @@ export default function Proyectos({ onSeleccionarProyecto }) {
           setPage(1)
           fetchProyectos()
         }}
+      />
+
+      <ConfirmarEliminarProyecto
+        proyecto={proyectoAEliminar}
+        onCancelar={() => setProyectoAEliminar(null)}
+        onConfirmar={confirmarEliminarProyecto}
+        loading={eliminando}
       />
     </div>
   )

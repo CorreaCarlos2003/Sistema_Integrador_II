@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { getInitials, getAvatarColors } from '../../../utils/avatarUtils'
+import ProyectoAccionesMenu from './ProyectoAccionesMenu'
 import './ProyectoDetalle.css'
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
@@ -63,21 +64,21 @@ const IconEliminar = (p) => (
   </svg>
 )
 
-const IconPuntos = (p) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...p}>
-    <circle cx="12" cy="5" r="1" />
-    <circle cx="12" cy="12" r="1" />
-    <circle cx="12" cy="19" r="1" />
-  </svg>
-)
-
 function formatFecha(fechaStr) {
   if (!fechaStr) return ''
+  // Las fechas "solo día" (YYYY-MM-DD, ej. fecha_fin) se parsean en UTC
+  // para que el huso horario local no recorra el día al mostrarlo.
+  const esSoloFecha = /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)
+  if (esSoloFecha) {
+    const [anio, mes, dia] = fechaStr.split('-').map(Number)
+    const fecha = new Date(Date.UTC(anio, mes - 1, dia))
+    return new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(fecha)
+  }
   const fecha = new Date(fechaStr)
   return new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short', year: 'numeric' }).format(fecha)
 }
 
-export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat }) {
+export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onArchivar, onEliminar }) {
   const [tab, setTab] = useState('documentos')
   const [busqueda, setBusqueda] = useState('')
 
@@ -200,6 +201,15 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat }) {
                 <IconCalendarioMini />
                 Creado: <strong>{formatFecha(proyecto.fecha_creación)}</strong>
               </span>
+              {proyecto.fecha_fin && (
+                <>
+                  <span className="proyecto-detalle__meta-sep">•</span>
+                  <span className="proyecto-detalle__meta-item">
+                    <IconCalendarioMini />
+                    Fecha límite: <strong>{formatFecha(proyecto.fecha_fin)}</strong>
+                  </span>
+                </>
+              )}
               <span className="proyecto-detalle__meta-sep">•</span>
               <span className="proyecto-detalle__meta-item">
                 <IconUsuariosMini />
@@ -213,9 +223,7 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat }) {
             </div>
           </div>
 
-          <button type="button" className="proyecto-detalle__btn-menu" aria-label="Menú contextual">
-            <IconPuntos />
-          </button>
+          <ProyectoAccionesMenu proyecto={proyecto} onArchivar={onArchivar} onEliminar={onEliminar} />
         </div>
       </div>
 

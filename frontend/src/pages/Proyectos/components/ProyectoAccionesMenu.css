@@ -1,0 +1,67 @@
+.proyecto-acciones-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.proyecto-acciones-menu__btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.proyecto-acciones-menu__btn:hover {
+  color: #334155;
+  background-color: #f1f5f9;
+}
+
+.proyecto-acciones-menu__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  z-index: 20;
+  min-width: 180px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+}
+
+.proyecto-acciones-menu__dropdown--right {
+  right: 0;
+}
+
+.proyecto-acciones-menu__dropdown--left {
+  left: 0;
+}
+
+.proyecto-acciones-menu__dropdown button {
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.proyecto-acciones-menu__dropdown button:hover {
+  background-color: #f8fafc;
+}
+
+.proyecto-acciones-menu__peligro {
+  color: #b91c1c !important;
+}
+
+.proyecto-acciones-menu__peligro:hover {
+  background-color: #fee2e2 !important;
+}

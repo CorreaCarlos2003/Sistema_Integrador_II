@@ -5,6 +5,7 @@ export default function ModalNuevoProyecto({ isOpen, onClose, onProjectCreated }
   const [nombre, setNombre] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [estado, setEstado] = useState('Activo')
+  const [fechaFin, setFechaFin] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -24,7 +25,8 @@ export default function ModalNuevoProyecto({ isOpen, onClose, onProjectCreated }
         body: JSON.stringify({
           nombre,
           descripción: descripcion,
-          estado
+          estado,
+          fecha_fin: fechaFin || null
         })
       })
 
@@ -39,6 +41,7 @@ export default function ModalNuevoProyecto({ isOpen, onClose, onProjectCreated }
       setNombre('')
       setDescripcion('')
       setEstado('Activo')
+      setFechaFin('')
       onClose()
     } catch (err) {
       setError(err.message)
@@ -84,9 +87,9 @@ export default function ModalNuevoProyecto({ isOpen, onClose, onProjectCreated }
           
           <div className="form-group">
             <label htmlFor="estado">Estado Inicial</label>
-            <select 
-              id="estado" 
-              value={estado} 
+            <select
+              id="estado"
+              value={estado}
               onChange={(e) => setEstado(e.target.value)}
             >
               <option value="Activo">Activo</option>
@@ -94,7 +97,18 @@ export default function ModalNuevoProyecto({ isOpen, onClose, onProjectCreated }
               <option value="Inactivo">Inactivo</option>
             </select>
           </div>
-          
+
+          <div className="form-group">
+            <label htmlFor="fechaFin">Duración del proyecto (fecha estimada de finalización)</label>
+            <input
+              type="date"
+              id="fechaFin"
+              value={fechaFin}
+              onChange={(e) => setFechaFin(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+            />
+          </div>
+
           <div className="modal-footer">
             <button type="button" className="btn-cancel" onClick={onClose} disabled={loading}>
               Cancelar

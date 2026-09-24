@@ -1,10 +1,11 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field, EmailStr
 
 class ProyectoBase(BaseModel):
     nombre: str = Field(..., max_length=150)
     descripción: Optional[str] = None
+    fecha_fin: Optional[date] = None
 
 
 class ProyectoCrear(ProyectoBase):
@@ -15,6 +16,7 @@ class ProyectoEditar(BaseModel):
     nombre: Optional[str] = Field(None, max_length=150)
     descripción: Optional[str] = None
     estado: Optional[str] = Field(None, max_length=50)
+    fecha_fin: Optional[date] = None
 
 
 class ProyectoEstado(BaseModel):
@@ -27,6 +29,7 @@ class ProyectoResponse(BaseModel):
     descripción: Optional[str]
     estado: str
     fecha_creación: datetime
+    fecha_fin: Optional[date] = None
 
     class Config:
         from_attributes = True
@@ -48,6 +51,7 @@ class ProyectoCardResponse(BaseModel):
     descripción: Optional[str] = None
     estado: str
     fecha_creación: datetime
+    fecha_fin: Optional[date] = None
     responsable: Optional[UsuarioResumen] = None
     miembros: List[UsuarioResumen] = []
     total_documentos: int = 0  # Listo para enlazar a tu tabla de documentos

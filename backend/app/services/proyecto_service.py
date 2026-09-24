@@ -1,6 +1,7 @@
 from math import ceil
 from typing import List, Optional
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.proyecto import Proyecto
@@ -30,6 +31,7 @@ class ProyectoService:
             nombre=datos.nombre.strip(),
             descripción=datos.descripción.strip() if datos.descripción else None,
             estado=datos.estado.strip() if datos.estado else "Activo",
+            fecha_fin=datos.fecha_fin,
         )
         return self.repo.guardar(nuevo)
 
@@ -42,6 +44,8 @@ class ProyectoService:
             proyecto.descripción = datos.descripción.strip()
         if datos.estado is not None:
             proyecto.estado = datos.estado.strip()
+        if datos.fecha_fin is not None:
+            proyecto.fecha_fin = datos.fecha_fin
 
         return self.repo.guardar(proyecto)
 
@@ -52,7 +56,16 @@ class ProyectoService:
 
     def eliminar_proyecto(self, id_proyecto: int) -> dict:
         proyecto = self.obtener_por_id(id_proyecto)
-        self.repo.eliminar(proyecto)
+        try:
+            self.repo.eliminar(proyecto)
+        except IntegrityError:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    f"No se pudo eliminar el proyecto {id_proyecto} porque tiene datos "
+                    "relacionados que lo impiden. Intenta archivarlo en su lugar."
+                ),
+            )
         return {"ok": True, "detail": f"Proyecto {id_proyecto} eliminado correctamente"}
 
     def listar_cards_proyectos(
@@ -98,6 +111,7 @@ class ProyectoService:
                     descripción=p.descripción,
                     estado=p.estado,
                     fecha_creación=p.fecha_creación,
+                    fecha_fin=p.fecha_fin,
                     responsable=responsable,
                     miembros=miembros,
                     total_documentos=0,  # Conectar al count real cuando exista la tabla

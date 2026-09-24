@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, DateTime, Integer, String, Text, func
+from sqlalchemy import Column, Date, DateTime, Integer, String, Text, func
 from app.database.conexion import Base
 from sqlalchemy.orm import relationship
 
@@ -14,5 +14,6 @@ class Proyecto(Base):
     descripción = Column(Text, nullable=True)
     estado = Column(String(50), nullable=False, default="Activo")
     fecha_creación = Column(DateTime, nullable=False, server_default=func.sysdatetime())
+    fecha_fin = Column(Date, nullable=True)
 
     usuarios = relationship("Usuario", secondary=usuarios_proyectos, backref="proyectos")
