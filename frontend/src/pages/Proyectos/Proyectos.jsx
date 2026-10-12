@@ -7,7 +7,7 @@ import ChatProyecto from './components/ChatProyecto'
 import ModalNuevoProyecto from './components/ModalNuevoProyecto'
 import './Proyectos.css'
 
-export default function Proyectos({ onSeleccionarProyecto }) {
+export default function Proyectos({ onSeleccionarProyecto, sesion }) {
   const [proyectos, setProyectos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -123,6 +123,7 @@ export default function Proyectos({ onSeleccionarProyecto }) {
       return (
         <ChatProyecto
           proyecto={proyectoSeleccionado}
+          sesion={sesion}
           onVolver={() => setVistaProyecto('detalle')}
         />
       )
@@ -131,6 +132,7 @@ export default function Proyectos({ onSeleccionarProyecto }) {
     return (
       <ProyectoDetalle
         proyecto={proyectoSeleccionado}
+        sesion={sesion}
         onVolver={() => setProyectoSeleccionado(null)}
         onIniciarChat={() => setVistaProyecto('chat')}
       />

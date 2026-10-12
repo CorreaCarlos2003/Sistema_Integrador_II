@@ -77,7 +77,7 @@ function formatFecha(fechaStr) {
   return new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short', year: 'numeric' }).format(fecha)
 }
 
-export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat }) {
+export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, sesion }) {
   const [tab, setTab] = useState('documentos')
   const [busqueda, setBusqueda] = useState('')
 
@@ -94,7 +94,9 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat }) {
     setCargandoDocumentos(true)
     setErrorDocumentos(null)
     try {
-      const response = await fetch(`${API_BASE_URL}/proyectos/${proyecto.id}/documentos`)
+      const response = await fetch(`${API_BASE_URL}/proyectos/${proyecto.id}/documentos`, {
+        headers: { Authorization: `Bearer ${sesion.token}` },
+      })
       if (!response.ok) throw new Error('No se pudieron cargar los documentos del proyecto')
       const data = await response.json()
       setDocumentos(data)
@@ -130,6 +132,7 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat }) {
 
       const response = await fetch(`${API_BASE_URL}/proyectos/${proyecto.id}/documentos`, {
         method: 'POST',
+        headers: { Authorization: `Bearer ${sesion.token}` },
         body: formData,
       })
 
@@ -150,6 +153,7 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat }) {
     try {
       const response = await fetch(`${API_BASE_URL}/proyectos/${proyecto.id}/documentos/${idDocumento}`, {
         method: 'DELETE',
+        headers: { Authorization: `Bearer ${sesion.token}` },
       })
       if (!response.ok) throw new Error('No se pudo eliminar el documento')
       setDocumentos((prev) => prev.filter((doc) => doc.id !== idDocumento))

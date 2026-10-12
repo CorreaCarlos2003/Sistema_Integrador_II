@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import './ChatProyecto.css'
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
@@ -100,12 +102,17 @@ const TARJETAS_ESTUDIO = [
   { titulo: 'Generar Guía de Estudio', descripcion: 'Preguntas y puntos clave para repasar el contenido', Icono: IconGuia },
 ]
 
-function crearConversacion() {
+function normalizarConversacion(conversacion) {
   return {
-    id: crypto.randomUUID(),
-    titulo: 'Nueva conversación',
-    fecha: new Date(),
-    mensajes: [],
+    ...conversacion,
+    fecha: new Date(conversacion.fecha),
+    mensajes: (conversacion.mensajes || []).map((mensaje) => ({
+      rol: mensaje.rol,
+      texto: mensaje.contenido,
+      tipo: mensaje.tipo,
+      resultados: mensaje.metadatos?.resultados || [],
+      documentos: mensaje.metadatos?.documentos || [],
+    })),
   }
 }
 
@@ -134,29 +141,67 @@ function formatoRelativo(fecha) {
   return `hace ${dias} d`
 }
 
-export default function ChatProyecto({ proyecto, onVolver }) {
+export default function ChatProyecto({ proyecto, onVolver, sesion }) {
   const [totalDocumentos, setTotalDocumentos] = useState(proyecto.total_documentos ?? 0)
-  const [conversaciones, setConversaciones] = useState(() => [crearConversacion()])
-  const [conversacionActivaId, setConversacionActivaId] = useState(() => conversaciones[0]?.id)
+  const [documentos, setDocumentos] = useState([])
+  const [conversaciones, setConversaciones] = useState([])
+  const [conversacionActivaId, setConversacionActivaId] = useState(null)
   const [busquedaConversacion, setBusquedaConversacion] = useState('')
   const [pregunta, setPregunta] = useState('')
+  const [documentoAnteriorId, setDocumentoAnteriorId] = useState('')
+  const [documentoNuevoId, setDocumentoNuevoId] = useState('')
+  const [instrucciones, setInstrucciones] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [errorChat, setErrorChat] = useState('')
   const finMensajesRef = useRef(null)
+
+  const pedir = async (ruta, opciones = {}) => {
+    const respuesta = await fetch(`${API_BASE_URL}/proyectos/${proyecto.id}${ruta}`, {
+      ...opciones,
+      headers: {
+        Authorization: `Bearer ${sesion.token}`,
+        ...(opciones.body ? { 'Content-Type': 'application/json' } : {}),
+        ...opciones.headers,
+      },
+    })
+    if (!respuesta.ok) {
+      const detalle = await respuesta.json().catch(() => null)
+      throw new Error(detalle?.detail || 'No se pudo completar la operación')
+    }
+    return respuesta.json()
+  }
 
   useEffect(() => {
     let cancelado = false
-    fetch(`${API_BASE_URL}/proyectos/${proyecto.id}/documentos`)
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => {
-        if (!cancelado) setTotalDocumentos(Array.isArray(data) ? data.length : 0)
+    Promise.all([pedir('/documentos'), pedir('/conversaciones')])
+      .then(async ([listaDocumentos, listaConversaciones]) => {
+        if (cancelado) return
+        setDocumentos(listaDocumentos)
+        setTotalDocumentos(listaDocumentos.length)
+        if (listaConversaciones.length === 0) {
+          const nueva = normalizarConversacion(await pedir('/conversaciones', { method: 'POST' }))
+          if (!cancelado) {
+            setConversaciones([nueva])
+            setConversacionActivaId(nueva.id)
+          }
+          return
+        }
+        const lista = listaConversaciones.map(normalizarConversacion)
+        const detalle = normalizarConversacion(await pedir(`/conversaciones/${lista[0].id}`))
+        if (!cancelado) {
+          setConversaciones([detalle, ...lista.slice(1)])
+          setConversacionActivaId(detalle.id)
+        }
       })
-      .catch(() => {})
+      .catch((error) => { if (!cancelado) setErrorChat(error.message) })
     return () => {
       cancelado = true
     }
-  }, [proyecto.id])
+    // La carga inicial se repite solo al cambiar de proyecto o sesión.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proyecto.id, sesion.token])
 
-  const conversacionActiva = conversaciones.find((c) => c.id === conversacionActivaId) ?? conversaciones[0]
+  const conversacionActiva = conversaciones.find((c) => c.id === conversacionActivaId)
 
   useEffect(() => {
     finMensajesRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -179,11 +224,27 @@ export default function ChatProyecto({ proyecto, onVolver }) {
       .map((g) => ({ nombre: g, items: grupos[g].sort((a, b) => b.fecha - a.fecha) }))
   }, [conversacionesFiltradas])
 
-  const handleNuevaConversacion = () => {
-    const nueva = crearConversacion()
-    setConversaciones((prev) => [nueva, ...prev])
-    setConversacionActivaId(nueva.id)
-    setPregunta('')
+  const handleNuevaConversacion = async () => {
+    setErrorChat('')
+    try {
+      const nueva = normalizarConversacion(await pedir('/conversaciones', { method: 'POST' }))
+      setConversaciones((prev) => [nueva, ...prev])
+      setConversacionActivaId(nueva.id)
+      setPregunta('')
+    } catch (error) {
+      setErrorChat(error.message)
+    }
+  }
+
+  const handleSeleccionarConversacion = async (id) => {
+    setConversacionActivaId(id)
+    setErrorChat('')
+    try {
+      const detalle = normalizarConversacion(await pedir(`/conversaciones/${id}`))
+      actualizarConversacion(id, () => detalle)
+    } catch (error) {
+      setErrorChat(error.message)
+    }
   }
 
   const actualizarConversacion = (id, actualizador) => {
@@ -193,37 +254,62 @@ export default function ChatProyecto({ proyecto, onVolver }) {
   const handleEnviar = async (e) => {
     e.preventDefault()
     const texto = pregunta.trim()
-    if (!texto || !conversacionActiva) return
+    if (!texto || !conversacionActiva || enviando) return
 
     const idConversacion = conversacionActiva.id
-    const esPrimerMensaje = conversacionActiva.mensajes.length === 0
-
-    actualizarConversacion(idConversacion, (c) => ({
-      ...c,
-      titulo: esPrimerMensaje ? texto.slice(0, 48) : c.titulo,
-      mensajes: [...c.mensajes, { rol: 'usuario', texto }],
-    }))
-    setPregunta('')
+    setErrorChat('')
     setEnviando(true)
 
     try {
-      const response = await fetch(`${API_BASE_URL}/proyectos/${proyecto.id}/chat`, {
+      const data = await pedir('/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pregunta: texto, k: 5 }),
+        body: JSON.stringify({ pregunta: texto, k: 5, conversacion_id: idConversacion }),
       })
-      if (!response.ok) throw new Error('No se pudo consultar el proyecto')
-      const data = await response.json()
-
       actualizarConversacion(idConversacion, (c) => ({
         ...c,
-        mensajes: [...c.mensajes, { rol: 'asistente', resultados: data.resultados || [] }],
+        titulo: c.mensajes.length === 0 ? texto.slice(0, 255) : c.titulo,
+        mensajes: [
+          ...c.mensajes,
+          { rol: 'usuario', texto },
+          { rol: 'asistente', texto: data.respuesta, resultados: data.resultados || [] },
+        ],
       }))
+      setPregunta('')
     } catch (err) {
-      actualizarConversacion(idConversacion, (c) => ({
+      setErrorChat(err.message)
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  const handleComparar = async (e) => {
+    e.preventDefault()
+    if (!conversacionActiva || !documentoAnteriorId || !documentoNuevoId || enviando) return
+    setErrorChat('')
+    setEnviando(true)
+    try {
+      const data = await pedir('/comparaciones', {
+        method: 'POST',
+        body: JSON.stringify({
+          documento_anterior_id: Number(documentoAnteriorId),
+          documento_nuevo_id: Number(documentoNuevoId),
+          instrucciones,
+          conversacion_id: conversacionActiva.id,
+        }),
+      })
+      const texto = `Compara ${data.documentos[0].nombre} con ${data.documentos[1].nombre}${instrucciones ? `. ${instrucciones}` : ''}`
+      actualizarConversacion(conversacionActiva.id, (c) => ({
         ...c,
-        mensajes: [...c.mensajes, { rol: 'asistente', error: err.message }],
+        titulo: c.mensajes.length === 0 ? texto.slice(0, 255) : c.titulo,
+        mensajes: [
+          ...c.mensajes,
+          { rol: 'usuario', texto },
+          { rol: 'asistente', texto: data.respuesta, tipo: 'comparacion', documentos: data.documentos },
+        ],
       }))
+      setInstrucciones('')
+    } catch (error) {
+      setErrorChat(error.message)
     } finally {
       setEnviando(false)
     }
@@ -280,7 +366,7 @@ export default function ChatProyecto({ proyecto, onVolver }) {
                     className={`chat-proyecto__historial-item ${
                       conversacion.id === conversacionActivaId ? 'chat-proyecto__historial-item--activo' : ''
                     }`}
-                    onClick={() => setConversacionActivaId(conversacion.id)}
+                    onClick={() => handleSeleccionarConversacion(conversacion.id)}
                   >
                     <span className="chat-proyecto__historial-item-titulo">{conversacion.titulo}</span>
                     <span className="chat-proyecto__historial-item-fecha">{formatoRelativo(conversacion.fecha)}</span>
@@ -300,7 +386,30 @@ export default function ChatProyecto({ proyecto, onVolver }) {
             <IconChevronAbajo className="chat-proyecto__banner-chevron" />
           </div>
 
+          <form className="chat-proyecto__comparar" onSubmit={handleComparar}>
+            <strong>Comparar versiones</strong>
+            <select aria-label="Versión anterior" value={documentoAnteriorId} onChange={(e) => setDocumentoAnteriorId(e.target.value)}>
+              <option value="">Versión anterior</option>
+              {documentos.map((doc) => <option key={doc.id} value={doc.id}>{doc.nombre} (#{doc.id})</option>)}
+            </select>
+            <select aria-label="Versión nueva" value={documentoNuevoId} onChange={(e) => setDocumentoNuevoId(e.target.value)}>
+              <option value="">Versión nueva</option>
+              {documentos.map((doc) => <option key={doc.id} value={doc.id}>{doc.nombre} (#{doc.id})</option>)}
+            </select>
+            <input
+              aria-label="Indicación para la comparación"
+              placeholder="Indicación adicional (opcional)"
+              value={instrucciones}
+              maxLength={2000}
+              onChange={(e) => setInstrucciones(e.target.value)}
+            />
+            <button type="submit" disabled={enviando || !conversacionActiva || !documentoAnteriorId || !documentoNuevoId || documentoAnteriorId === documentoNuevoId}>
+              Comparar
+            </button>
+          </form>
+
           <div className="chat-proyecto__mensajes">
+            {errorChat && <p className="chat-proyecto__error" role="alert">{errorChat}</p>}
             {conversacionActiva?.mensajes.length === 0 && (
               <div className="chat-proyecto__vacio">
                 Escribe una pregunta sobre los documentos indexados de este proyecto para empezar.
@@ -319,14 +428,17 @@ export default function ChatProyecto({ proyecto, onVolver }) {
                     DocAI
                   </div>
 
-                  {mensaje.error ? (
-                    <p className="chat-proyecto__error">Error: {mensaje.error}</p>
-                  ) : mensaje.resultados.length === 0 ? (
-                    <p className="chat-proyecto__sin-resultados">
-                      No encontré fragmentos relevantes. Verifica que el proyecto tenga documentos .docx subidos e indexados.
+                  <div className="chat-proyecto__respuesta">
+                    <Markdown remarkPlugins={[remarkGfm]}>{mensaje.texto || ''}</Markdown>
+                  </div>
+                  {mensaje.documentos?.length > 0 && (
+                    <p className="chat-proyecto__fuentes">
+                      {mensaje.documentos[0].nombre} → {mensaje.documentos[1].nombre}
                     </p>
-                  ) : (
-                    <div className="chat-proyecto__fragmentos">
+                  )}
+                  {mensaje.resultados?.length > 0 && (
+                    <details className="chat-proyecto__fragmentos">
+                      <summary>Ver {mensaje.resultados.length} fragmentos consultados</summary>
                       {mensaje.resultados.map((r, j) => (
                         <div key={j} className="chat-proyecto__fragmento">
                           <div className="chat-proyecto__fragmento-fuente">
@@ -336,13 +448,13 @@ export default function ChatProyecto({ proyecto, onVolver }) {
                           <p>{r.contenido}</p>
                         </div>
                       ))}
-                    </div>
+                    </details>
                   )}
                 </div>
               )
             )}
 
-            {enviando && <div className="chat-proyecto__escribiendo">DocAI está buscando en los documentos...</div>}
+            {enviando && <div className="chat-proyecto__escribiendo">DocAI está preparando la respuesta...</div>}
             <div ref={finMensajesRef} />
           </div>
 
@@ -353,7 +465,7 @@ export default function ChatProyecto({ proyecto, onVolver }) {
               value={pregunta}
               onChange={(e) => setPregunta(e.target.value)}
             />
-            <button type="submit" disabled={enviando || !pregunta.trim()} aria-label="Enviar pregunta">
+            <button type="submit" disabled={enviando || !conversacionActiva || !pregunta.trim()} aria-label="Enviar pregunta">
               <IconEnviar />
             </button>
           </form>
