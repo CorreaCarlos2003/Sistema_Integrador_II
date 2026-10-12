@@ -13,6 +13,8 @@ class AuthService:
         self.repo = UsuarioRepository(db)
 
     def autenticar(self, datos: LoginRequest) -> dict:
+        if not SECRET_KEY:
+            raise HTTPException(status_code=503, detail="JWT_SECRET_KEY no está configurada")
         usuario = self.repo.obtener_por_correo(datos.correo)
 
         # Comparación plana tal cual la tenías
