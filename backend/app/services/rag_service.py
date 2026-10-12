@@ -2,12 +2,11 @@
 Motor de RAG (Retrieval-Augmented Generation) del proyecto.
 
 Reimplementa, para uso desde la API, la lógica prototipada en el notebook
-`RAG/Base_Chroma.ipynb`: carga de .docx, chunking y búsqueda semántica con
+`RAG_v3.ipynb`: carga de .docx, chunking y búsqueda semántica con
 Chroma. Cada proyecto tiene su propia colección de Chroma, aislada de las
 demás, persistida en disco bajo `RAG_STORAGE_DIR`.
 
-Por ahora solo se implementa retrieval (no hay generación de respuesta con
-un LLM): el chat devuelve los fragmentos más relevantes para la pregunta.
+La generación de respuestas a partir de los fragmentos está en groq_service.
 """
 
 import os
@@ -55,28 +54,31 @@ def obtener_vectorstore(proyecto_id: int) -> Chroma:
     )
 
 
-def _cargar_docx(ruta: str) -> Document:
+def extraer_texto_docx(ruta: str) -> str:
     docx = WordDocument(ruta)
-
     textos = [p.text.strip() for p in docx.paragraphs if p.text.strip()]
-    contenido = "\n".join(textos)
+    return "\n".join(textos)
+
+
+def _cargar_docx(ruta: str, nombre: str | None = None) -> Document:
+    contenido = extraer_texto_docx(ruta)
 
     return Document(
         page_content=contenido,
         metadata={
             "source": ruta,
-            "nombre": os.path.basename(ruta),
+            "nombre": nombre or os.path.basename(ruta),
             "tipo": "docx",
         },
     )
 
 
-def indexar_documento(proyecto_id: int, ruta_archivo: str) -> int:
+def indexar_documento(proyecto_id: int, ruta_archivo: str, nombre: str | None = None) -> int:
     """Parte un .docx en chunks, los embebe y los guarda en la colección del proyecto.
 
     Devuelve la cantidad de chunks indexados.
     """
-    documento = _cargar_docx(ruta_archivo)
+    documento = _cargar_docx(ruta_archivo, nombre)
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=RAG_CHUNK_SIZE,
@@ -100,7 +102,9 @@ def indexar_documento(proyecto_id: int, ruta_archivo: str) -> int:
 def eliminar_documento_indexado(proyecto_id: int, ruta_archivo: str) -> None:
     """Elimina de la colección del proyecto todos los chunks de ese archivo."""
     vectorstore = obtener_vectorstore(proyecto_id)
-    vectorstore.delete(where={"source": ruta_archivo})
+    ids = vectorstore.get(where={"source": ruta_archivo})["ids"]
+    if ids:
+        vectorstore.delete(ids=ids)
 
 
 def buscar(proyecto_id: int, pregunta: str, k: int = 5) -> list[dict]:
@@ -113,6 +117,7 @@ def buscar(proyecto_id: int, pregunta: str, k: int = 5) -> list[dict]:
             "chunk_id": doc.metadata.get("chunk_id", -1),
             "contenido": doc.page_content,
             "score": float(score),
+            "ruta_archivo": doc.metadata.get("source", ""),
         }
         for doc, score in resultados
     ]

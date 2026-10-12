@@ -18,9 +18,11 @@ class DocumentoResponse(BaseModel):
 class ChatPregunta(BaseModel):
     pregunta: str = Field(..., min_length=1)
     k: int = Field(5, ge=1, le=20)
+    conversacion_id: int | None = Field(None, gt=0)
 
 
 class ChatResultado(BaseModel):
+    documento_id: int | None = None
     documento: str
     chunk_id: int
     contenido: str
@@ -28,4 +30,6 @@ class ChatResultado(BaseModel):
 
 
 class ChatRespuesta(BaseModel):
+    conversacion_id: int
+    respuesta: str
     resultados: List[ChatResultado]
