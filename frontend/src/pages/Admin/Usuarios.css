@@ -96,6 +96,147 @@
   border-radius: 4px;
 }
 
+/* Por proyecto */
+.usuarios__pp {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.usuarios__pp-card {
+  background: var(--papel-tarjeta);
+  border: 1px solid var(--borde);
+  border-radius: 2px;
+  padding: 21px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.usuarios__pp-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.usuarios__pp-eyebrow {
+  display: block;
+  font-family: var(--fuente-mono);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.55px;
+  text-transform: uppercase;
+  color: var(--texto-tenue);
+}
+
+.usuarios__pp-titulo {
+  margin: 2px 0 0;
+  font-family: var(--fuente-display);
+  font-weight: 300;
+  font-size: 30px;
+  letter-spacing: -0.75px;
+  color: var(--texto-fuerte);
+}
+
+.usuarios__pp-barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 13px;
+  border-top: 1px solid var(--borde);
+}
+
+.usuarios__pp-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.usuarios__pp-selector-label {
+  font-family: var(--fuente-mono);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.88px;
+  text-transform: uppercase;
+  color: var(--texto-secundario);
+  white-space: nowrap;
+}
+
+.usuarios__pp-resumen {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--papel);
+  border: 1px solid var(--borde);
+  border-radius: 2px;
+  padding: 7px 15px;
+}
+
+/* Badges: rol en el sistema */
+.usuarios__rol-badge--jefe {
+  background: #eaf2f0;
+  border-color: #9ec1bb;
+  color: var(--teal);
+}
+
+/* Badges: rol en el proyecto */
+.usuarios__rol-proyecto-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 2px;
+  background: var(--papel);
+  border: 1px solid var(--borde-fuerte);
+  color: var(--texto-fuerte);
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.usuarios__rol-proyecto-badge--responsable {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: #fff;
+  font-weight: 600;
+}
+
+.usuarios__rol-proyecto-badge--pendiente {
+  background: #fff6e0;
+  border-color: #e8c468;
+  color: #8a6400;
+  font-weight: 600;
+}
+
+.usuarios__fila-pendiente {
+  background: #fffdf5;
+}
+
+.usuarios__rol-proyecto-badge--inhabilitado {
+  background: #f1eeea;
+  border-color: #c9c4bc;
+  color: #8a8680;
+  font-weight: 600;
+}
+
+.usuarios__fila-inhabilitada {
+  background: #fafaf9;
+  color: #9a968f;
+}
+
+.usuarios__fila-inhabilitada .usuarios__nombre,
+.usuarios__fila-inhabilitada .usuarios__correo,
+.usuarios__fila-inhabilitada .usuarios__tenue {
+  color: #9a968f;
+}
+
+.usuarios__avatar--inhabilitado {
+  background: #e3e1dc;
+  color: #8a8680;
+  border-color: #c9c4bc;
+}
+
 /* Stat cards */
 .usuarios__stats {
   display: grid;
@@ -111,12 +252,6 @@
   border: 1px solid var(--borde);
   border-radius: 2px;
   padding: 21px;
-}
-
-.usuarios__stat-titulo-fila {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
 }
 
 .usuarios__stat-etiqueta {
@@ -225,7 +360,6 @@
   background: var(--papel-tarjeta);
   border: 1px solid var(--borde);
   border-radius: 2px;
-  overflow: hidden;
 }
 
 .usuarios__tabla {
@@ -495,6 +629,26 @@
   margin: 0 0 16px;
   color: var(--texto-secundario);
   font-size: 14px;
+}
+
+.usuarios__confirmacion-icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  margin-bottom: 12px;
+}
+
+.usuarios__confirmacion-icono--ok {
+  background: #e3f2ee;
+  color: var(--teal);
+}
+
+.usuarios__confirmacion-icono--error {
+  background: var(--terracota-bg);
+  color: var(--terracota);
 }
 
 .usuarios__modal label {

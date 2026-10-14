@@ -1,0 +1,2 @@
+ALTER TABLE usuarios_proyectos
+    ADD COLUMN activo BOOLEAN NOT NULL DEFAULT TRUE;

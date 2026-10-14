@@ -43,7 +43,7 @@ export default function ProyectoTable({ proyectos, onSeleccionarProyecto, onArch
           {proyectos.map((proyecto) => {
             const esActivo = proyecto.estado?.toLowerCase() === 'activo'
             const esPausado = proyecto.estado?.toLowerCase() === 'pausado'
-            const esInactivo = proyecto.estado?.toLowerCase() === 'inactivo' || proyecto.estado?.toLowerCase() === 'archivado'
+            const esInactivo = proyecto.archivado || proyecto.estado?.toLowerCase() === 'inactivo'
             
             const getBadgeClass = () => {
               if (esActivo) return 'proyecto-card__badge--activo'
@@ -70,13 +70,17 @@ export default function ProyectoTable({ proyectos, onSeleccionarProyecto, onArch
                 </td>
 
                 <td>
-                  {proyecto.responsable ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {renderAvatar(proyecto.responsable, 'resp')}
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '0.9em', fontWeight: '500' }}>{proyecto.responsable.nombre}</span>
-                        <span style={{ fontSize: '0.75em', color: '#777' }}>{proyecto.responsable.rol || 'Jefe'}</span>
-                      </div>
+                  {proyecto.responsables?.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {proyecto.responsables.map((responsable) => (
+                        <div key={responsable.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {renderAvatar(responsable, `resp-${responsable.id}`)}
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontSize: '0.9em', fontWeight: '500' }}>{responsable.nombre}</span>
+                            <span style={{ fontSize: '0.75em', color: '#777' }}>{responsable.rol || 'Jefe'}</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   ) : (
                     <span style={{ color: '#aaa', fontSize: '0.9em' }}>Sin asignar</span>
@@ -86,7 +90,7 @@ export default function ProyectoTable({ proyectos, onSeleccionarProyecto, onArch
                 <td>
                   <span className={`proyecto-card__badge ${getBadgeClass()}`}>
                     <span className="proyecto-card__badge-dot"></span>
-                    {proyecto.estado?.toUpperCase()}
+                    {proyecto.archivado ? 'ARCHIVADO' : proyecto.estado?.toUpperCase()}
                   </span>
                 </td>
 

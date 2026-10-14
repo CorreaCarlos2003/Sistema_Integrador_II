@@ -111,8 +111,9 @@
 .proyectos-header__select-inline {
   border: none;
   background: transparent;
+  font-family: inherit;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 400;
   color: #333;
   margin-left: 6px;
   outline: none;
@@ -302,6 +303,12 @@
   align-items: center;
 }
 
+.proyecto-card__responsables {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .proyecto-card__responsable {
   display: flex;
   align-items: center;
@@ -466,7 +473,6 @@
   background: #fff;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
-  overflow: hidden;
 }
 .proyectos-tabla {
   width: 100%;
@@ -481,6 +487,15 @@
   text-transform: uppercase;
   border-bottom: 1px solid #e2e8f0;
   text-align: left;
+}
+.proyectos-tabla th:first-child {
+  border-top-left-radius: 8px;
+}
+.proyectos-tabla th:last-child {
+  border-top-right-radius: 8px;
+}
+.proyectos-tabla tbody tr:last-child td {
+  border-bottom: none;
 }
 .proyectos-tabla td {
   padding: 16px;

@@ -1,10 +1,11 @@
 import { getInitials, getAvatarColors } from '../../../utils/avatarUtils'
+import { formatoRelativo } from '../../../utils/tiempo'
 import ProyectoAccionesMenu from './ProyectoAccionesMenu'
 
 export default function ProyectoCard({ proyecto, onSeleccionar, onArchivar, onEliminar }) {
   const esActivo = proyecto.estado?.toLowerCase() === 'activo'
   const esPausado = proyecto.estado?.toLowerCase() === 'pausado'
-  const esInactivo = proyecto.estado?.toLowerCase() === 'inactivo' || proyecto.estado?.toLowerCase() === 'archivado'
+  const esInactivo = proyecto.archivado || proyecto.estado?.toLowerCase() === 'inactivo'
   
   // Función para determinar clase del badge
   const getBadgeClass = () => {
@@ -17,6 +18,7 @@ export default function ProyectoCard({ proyecto, onSeleccionar, onArchivar, onEl
   // Renderizar avatares de miembros con límite (ej. máx 3)
   const MAX_MIEMBROS = 3
   const miembros = proyecto.miembros || []
+  const responsables = proyecto.responsables || []
   const miembrosParaMostrar = miembros.slice(0, MAX_MIEMBROS)
   const miembrosRestantes = miembros.length - MAX_MIEMBROS
 
@@ -74,7 +76,7 @@ export default function ProyectoCard({ proyecto, onSeleccionar, onArchivar, onEl
         <div className="proyecto-card__header-right">
           <span className={`proyecto-card__badge ${getBadgeClass()}`}>
             <span className="proyecto-card__badge-dot"></span>
-            {proyecto.estado?.toUpperCase()}
+            {proyecto.archivado ? 'ARCHIVADO' : proyecto.estado?.toUpperCase()}
           </span>
           <ProyectoAccionesMenu proyecto={proyecto} onArchivar={onArchivar} onEliminar={onEliminar} />
         </div>
@@ -89,14 +91,20 @@ export default function ProyectoCard({ proyecto, onSeleccionar, onArchivar, onEl
 
       <div className="proyecto-card__details">
         <div className="proyecto-card__detail-row">
-          <span className="proyecto-card__detail-label">RESPONSABLE</span>
+          <span className="proyecto-card__detail-label">
+            {responsables.length > 1 ? 'RESPONSABLES' : 'RESPONSABLE'}
+          </span>
           <div className="proyecto-card__detail-value">
-            {proyecto.responsable ? (
-              <div className="proyecto-card__responsable">
-                {renderAvatar(proyecto.responsable)}
-                <span className="proyecto-card__responsable-name">
-                  {proyecto.responsable.nombre} <span className="proyecto-card__responsable-rol">({proyecto.responsable.cargo || 'Responsable'})</span>
-                </span>
+            {responsables.length > 0 ? (
+              <div className="proyecto-card__responsables">
+                {responsables.map((responsable) => (
+                  <div key={responsable.id} className="proyecto-card__responsable">
+                    {renderAvatar(responsable)}
+                    <span className="proyecto-card__responsable-name">
+                      {responsable.nombre} <span className="proyecto-card__responsable-rol">({responsable.cargo || 'Responsable'})</span>
+                    </span>
+                  </div>
+                ))}
               </div>
             ) : (
               <span className="proyecto-card__no-data">Sin asignar</span>
@@ -151,8 +159,9 @@ export default function ProyectoCard({ proyecto, onSeleccionar, onArchivar, onEl
             <circle cx="12" cy="12" r="10" />
             <polyline points="12 6 12 12 16 14" />
           </svg>
-          <span className="proyecto-card__ultima-act">Última act.: hace 2 horas</span> 
-          {/* Asumiendo que la API no manda la hora relativa, harcodamos la lógica por ahora o mostramos un dummy */}
+          <span className="proyecto-card__ultima-act">
+            Última act.: {formatoRelativo(new Date(proyecto.fecha_ultima_actividad || proyecto.fecha_creacion))}
+          </span>
         </div>
         <div className="proyecto-card__footer-right">
           <div className="proyecto-card__fecha-col">

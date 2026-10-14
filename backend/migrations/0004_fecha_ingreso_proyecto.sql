@@ -1,0 +1,2 @@
+ALTER TABLE usuarios_proyectos
+    ADD COLUMN fecha_ingreso TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;

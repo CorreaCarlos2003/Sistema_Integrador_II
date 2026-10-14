@@ -12,7 +12,10 @@ DATABASE = os.getenv("DB_NAME", "bd_chat_postgres")
 USER = os.getenv("DB_USER", "postgres")
 PASSWORD = os.getenv("DB_PASSWORD", "root")
 
-postgres_url = f"postgresql://{USER}:{PASSWORD}@{SERVER}:{PORT}/{DATABASE}"
+postgres_url = (
+    f"postgresql://{urllib.parse.quote_plus(USER)}:{urllib.parse.quote_plus(PASSWORD)}"
+    f"@{SERVER}:{PORT}/{DATABASE}"
+)
 
 engine = create_engine(postgres_url, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

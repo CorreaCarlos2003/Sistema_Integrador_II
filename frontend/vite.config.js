@@ -7,6 +7,10 @@ export default defineConfig({
     proxy: {
       '/auth': 'http://127.0.0.1:8000',
       '/usuarios': 'http://127.0.0.1:8000',
+      '/proyectos': 'http://127.0.0.1:8000',
+      '/permisos': 'http://127.0.0.1:8000',
+      '/historial': 'http://127.0.0.1:8000',
+      '/reportes': 'http://127.0.0.1:8000',
     },
   },
 })

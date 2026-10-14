@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
+import { actorHeaders } from '../../../utils/actor'
 import './ModalNuevoProyecto.css' // We can just add it to Proyectos.css or a new file. Let's create ModalNuevoProyecto.css
 
 export default function ModalNuevoProyecto({ isOpen, onClose, onProjectCreated }) {
   const [nombre, setNombre] = useState('')
   const [descripcion, setDescripcion] = useState('')
-  const [estado, setEstado] = useState('Por iniciar')
   const [responsableId, setResponsableId] = useState('')
   const [cargoResponsable, setCargoResponsable] = useState('')
   const [fechaFin, setFechaFin] = useState('')
@@ -39,12 +39,12 @@ export default function ModalNuevoProyecto({ isOpen, onClose, onProjectCreated }
       const response = await fetch('http://127.0.0.1:8000/proyectos', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...actorHeaders(),
         },
         body: JSON.stringify({
           nombre,
           descripcion: descripcion,
-          estado,
           responsable_id: parseInt(responsableId, 10),
           cargo_responsable: cargoResponsable,
           fecha_fin: fechaFin
@@ -61,7 +61,6 @@ export default function ModalNuevoProyecto({ isOpen, onClose, onProjectCreated }
       // Limpiar formulario
       setNombre('')
       setDescripcion('')
-      setEstado('Por iniciar')
       setResponsableId('')
       setCargoResponsable('')
       setFechaFin('')
@@ -145,18 +144,6 @@ export default function ModalNuevoProyecto({ isOpen, onClose, onProjectCreated }
               onChange={(e) => setFechaFin(e.target.value)}
               required
             />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="estado">Estado Inicial</label>
-            <select
-              id="estado"
-              value={estado}
-              onChange={(e) => setEstado(e.target.value)}
-            >
-              <option value="Por iniciar">Por iniciar</option>
-              <option value="En proceso">En proceso</option>
-            </select>
           </div>
 
           <div className="modal-footer">

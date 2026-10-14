@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { getInitials, getAvatarColors } from '../../../utils/avatarUtils'
+import { actorHeaders } from '../../../utils/actor'
 import ProyectoAccionesMenu from './ProyectoAccionesMenu'
 import './ProyectoDetalle.css'
 
@@ -78,7 +79,7 @@ function formatFecha(fechaStr) {
   return new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short', year: 'numeric' }).format(fecha)
 }
 
-export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onArchivar, onEliminar }) {
+export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onArchivar, onEliminar, onActividad }) {
   const [tab, setTab] = useState('documentos')
   const [busqueda, setBusqueda] = useState('')
 
@@ -88,7 +89,7 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
   const [subiendo, setSubiendo] = useState(false)
   const inputArchivoRef = useRef(null)
 
-  const estado = (proyecto.estado || '').toLowerCase()
+  const estado = proyecto.archivado ? 'archivado' : (proyecto.estado || '').toLowerCase()
   const miembros = proyecto.miembros || []
 
   const fetchDocumentos = async () => {
@@ -131,6 +132,7 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
 
       const response = await fetch(`${API_BASE_URL}/proyectos/${proyecto.id}/documentos`, {
         method: 'POST',
+        headers: { ...actorHeaders() },
         body: formData,
       })
 
@@ -140,6 +142,7 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
       }
 
       await fetchDocumentos()
+      onActividad?.()
     } catch (err) {
       setErrorDocumentos(err.message)
     } finally {
@@ -151,6 +154,7 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
     try {
       const response = await fetch(`${API_BASE_URL}/proyectos/${proyecto.id}/documentos/${idDocumento}`, {
         method: 'DELETE',
+        headers: { ...actorHeaders() },
       })
       if (!response.ok) throw new Error('No se pudo eliminar el documento')
       setDocumentos((prev) => prev.filter((doc) => doc.id !== idDocumento))
@@ -180,7 +184,7 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
               <span className="proyecto-detalle__codigo">{proyecto.codigo || '#PRJ-000'}</span>
               <span className={`proyecto-detalle__badge proyecto-detalle__badge--${estado}`}>
                 <span className="proyecto-detalle__badge-dot" />
-                {proyecto.estado?.toUpperCase()}
+                {proyecto.archivado ? 'ARCHIVADO' : proyecto.estado?.toUpperCase()}
               </span>
             </div>
 
@@ -189,13 +193,13 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
             )}
 
             <div className="proyecto-detalle__meta">
-              {proyecto.responsable && (
-                <span className="proyecto-detalle__meta-item">
-                  <span className="proyecto-detalle__meta-avatar">{getInitials(proyecto.responsable.nombre)}</span>
-                  <strong>{proyecto.responsable.nombre}</strong>
-                  <span className="proyecto-detalle__meta-tenue">({proyecto.responsable.rol || 'Jefe de Proyectos'})</span>
+              {(proyecto.responsables || []).map((responsable) => (
+                <span key={responsable.id} className="proyecto-detalle__meta-item">
+                  <span className="proyecto-detalle__meta-avatar">{getInitials(responsable.nombre)}</span>
+                  <strong>{responsable.nombre}</strong>
+                  <span className="proyecto-detalle__meta-tenue">({responsable.rol || 'Jefe de Proyectos'})</span>
                 </span>
-              )}
+              ))}
               <span className="proyecto-detalle__meta-sep">•</span>
               <span className="proyecto-detalle__meta-item">
                 <IconCalendarioMini />

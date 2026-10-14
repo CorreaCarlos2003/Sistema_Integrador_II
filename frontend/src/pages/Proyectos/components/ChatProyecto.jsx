@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { actorHeaders } from '../../../utils/actor'
+import { formatoRelativo } from '../../../utils/tiempo'
 import './ChatProyecto.css'
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
@@ -123,17 +125,6 @@ function grupoDeFecha(fecha) {
   return 'Anteriores'
 }
 
-function formatoRelativo(fecha) {
-  const segundos = Math.floor((Date.now() - fecha.getTime()) / 1000)
-  if (segundos < 60) return 'hace instantes'
-  const minutos = Math.floor(segundos / 60)
-  if (minutos < 60) return `hace ${minutos} min`
-  const horas = Math.floor(minutos / 60)
-  if (horas < 24) return `hace ${horas} h`
-  const dias = Math.floor(horas / 24)
-  return `hace ${dias} d`
-}
-
 export default function ChatProyecto({ proyecto, onVolver }) {
   const [totalDocumentos, setTotalDocumentos] = useState(proyecto.total_documentos ?? 0)
   const [conversaciones, setConversaciones] = useState(() => [crearConversacion()])
@@ -209,7 +200,7 @@ export default function ChatProyecto({ proyecto, onVolver }) {
     try {
       const response = await fetch(`${API_BASE_URL}/proyectos/${proyecto.id}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...actorHeaders() },
         body: JSON.stringify({ pregunta: texto, k: 5 }),
       })
       if (!response.ok) throw new Error('No se pudo consultar el proyecto')

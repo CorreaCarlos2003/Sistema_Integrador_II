@@ -14,6 +14,7 @@ class Proyecto(Base):
     estado = Column(String(50), nullable=False, default="Por Iniciar")
     archivado = Column(Boolean, default=False, nullable=False)
     fecha_creacion = Column(DateTime, nullable=False, server_default=func.now())
+    fecha_ultima_actividad = Column(DateTime, nullable=False, server_default=func.now())
 
     usuarios = relationship("UsuarioProyecto", back_populates="proyecto", cascade="all, delete-orphan")
     documentos = relationship("Documento", back_populates="proyecto", cascade="all, delete-orphan")

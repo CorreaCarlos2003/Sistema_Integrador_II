@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import './Dashboard.css'
 import {
   IconDiagnosticoIA,
@@ -11,6 +12,25 @@ import {
   IconLupaReportes,
   IconEngranajeRoles,
 } from '../../components/icons'
+
+async function pedir(ruta, opciones = {}) {
+  const respuesta = await fetch(ruta, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opciones,
+  })
+  const datos = await respuesta.json().catch(() => null)
+  if (!respuesta.ok) {
+    throw new Error(typeof datos?.detail === 'string' ? datos.detail : 'No se pudo completar la acción')
+  }
+  return datos
+}
+
+function formatFechaCorta(iso) {
+  if (!iso) return '—'
+  const fecha = new Date(iso)
+  if (Number.isNaN(fecha.getTime())) return '—'
+  return fecha.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', '')
+}
 
 const METRICAS = [
   {
@@ -107,12 +127,98 @@ const ACCESOS_RAPIDOS = [
 export default function Dashboard({ sesion }) {
   const nombre = sesion?.nombre?.split(' ')[0] ?? 'Admin'
 
+  const [invitaciones, setInvitaciones] = useState([])
+  const [cargandoInvitaciones, setCargandoInvitaciones] = useState(true)
+  const [procesandoId, setProcesandoId] = useState(null)
+  const [errorInvitaciones, setErrorInvitaciones] = useState('')
+
+  const cargarInvitaciones = async () => {
+    const lista = await pedir(`/proyectos/invitaciones/${sesion.id}`)
+    setInvitaciones(lista)
+  }
+
+  useEffect(() => {
+    if (!sesion?.id) return
+    cargarInvitaciones()
+      .catch((err) => setErrorInvitaciones(err.message))
+      .finally(() => setCargandoInvitaciones(false))
+  }, [sesion?.id])
+
+  const responderInvitacion = async (proyectoId, aceptar) => {
+    setErrorInvitaciones('')
+    setProcesandoId(proyectoId)
+    try {
+      await pedir(`/proyectos/${proyectoId}/usuarios/${sesion.id}/${aceptar ? 'aceptar' : 'rechazar'}`, {
+        method: 'POST',
+      })
+      await cargarInvitaciones()
+    } catch (err) {
+      setErrorInvitaciones(err.message)
+    } finally {
+      setProcesandoId(null)
+    }
+  }
+
+  const mostrarInvitaciones = cargandoInvitaciones || invitaciones.length > 0
+
   return (
     <div className="dash">
       <div className="dash__encabezado">
         <h1 className="dash__saludo">¡Hola, {nombre}!</h1>
         <p className="dash__subtitulo">Aquí tienes un resumen de la actividad reciente en DocAI.</p>
       </div>
+
+      {mostrarInvitaciones && (
+        <section className="dash__card dash__invitaciones-card">
+          <div className="dash__card-encabezado">
+            <h2>
+              <span className="dash__punto-brillante" />
+              Invitaciones a proyectos
+            </h2>
+            {invitaciones.length > 0 && (
+              <span className="dash__badge dash__badge--alerta">{invitaciones.length} pendiente{invitaciones.length === 1 ? '' : 's'}</span>
+            )}
+          </div>
+
+          {errorInvitaciones && <p className="dash__invitacion-error">{errorInvitaciones}</p>}
+
+          {cargandoInvitaciones ? (
+            <p className="dash__invitacion-vacio">Cargando invitaciones...</p>
+          ) : (
+            <ul className="dash__lista-invitaciones">
+              {invitaciones.map((inv) => (
+                <li key={inv.proyecto_id} className="dash__fila-invitacion">
+                  <div className="dash__invitacion-info">
+                    <strong>{inv.proyecto_nombre}</strong>
+                    <span>
+                      {inv.rol_proyecto === 'RESPONSABLE' ? 'Responsable' : 'Miembro'}
+                      {inv.cargo ? ` · ${inv.cargo}` : ''} · Invitado el {formatFechaCorta(inv.fecha_ingreso)}
+                    </span>
+                  </div>
+                  <div className="dash__invitacion-acciones">
+                    <button
+                      type="button"
+                      className="dash__btn-aceptar"
+                      disabled={procesandoId === inv.proyecto_id}
+                      onClick={() => responderInvitacion(inv.proyecto_id, true)}
+                    >
+                      Aceptar
+                    </button>
+                    <button
+                      type="button"
+                      className="dash__btn-cancelar"
+                      disabled={procesandoId === inv.proyecto_id}
+                      onClick={() => responderInvitacion(inv.proyecto_id, false)}
+                    >
+                      Cancelar solicitud
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       <div className="dash__metricas">
         {METRICAS.map(({ id, Icono, etiqueta, titulo, valor, valorClase, badge, badgeConPunto, delta }) => (

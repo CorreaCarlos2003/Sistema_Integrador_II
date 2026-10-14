@@ -1,26 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Login from "./pages/Login/Login";
 import AdminLayout from "./pages/Admin/AdminLayout";
+import { obtenerSeccionesPermitidas } from "./pages/Admin/secciones";
 import Dashboard from "./pages/Admin/Dashboard";
 import Usuarios from "./pages/Admin/Usuarios";
+import RolesPermisos from "./pages/Admin/RolesPermisos";
+import Historial from "./pages/Admin/Historial";
+import Reportes from "./pages/Admin/Reportes";
 import Proyectos from "./pages/Proyectos/Proyectos";
-import Inicio from "./pages/Usuario/Inicio";
 import "./pages/Login/Login.css";
 
-const SECCIONES_PENDIENTES = {
-  proyectos: 'Proyectos',
-  roles: 'Roles y Permisos',
-  historial: 'Historial',
-  reportes: 'Reportes',
-}
-
-
-function Proximamente({ titulo }) {
+function Proximamente() {
   return (
     <div
       style={{ textAlign: "center", padding: "80px 20px", color: "#6b7785" }}
     >
-      <h2 style={{ margin: "0 0 8px", color: "#16324f" }}>{titulo}</h2>
       <p style={{ margin: 0 }}>
         Esta sección aún no tiene pantalla diseñada. Próximamente.
       </p>
@@ -28,9 +22,40 @@ function Proximamente({ titulo }) {
   );
 }
 
+const SESION_STORAGE_KEY = "sesion";
+
+function cargarSesionGuardada() {
+  try {
+    const guardada = localStorage.getItem(SESION_STORAGE_KEY);
+    return guardada ? JSON.parse(guardada) : null;
+  } catch {
+    return null;
+  }
+}
+
 function App() {
-  const [sesion, setSesion] = useState(null);
+  const [sesion, setSesion] = useState(cargarSesionGuardada);
   const [seccion, setSeccion] = useState("inicio");
+
+  useEffect(() => {
+    if (sesion) {
+      localStorage.setItem(SESION_STORAGE_KEY, JSON.stringify(sesion));
+    } else {
+      localStorage.removeItem(SESION_STORAGE_KEY);
+    }
+  }, [sesion]);
+
+  useEffect(() => {
+    if (!sesion?.id) return undefined;
+
+    const enviarLatido = () => {
+      fetch(`/usuarios/${sesion.id}/actividad`, { method: "POST" }).catch(() => {});
+    };
+
+    enviarLatido();
+    const intervalo = setInterval(enviarLatido, 60000);
+    return () => clearInterval(intervalo);
+  }, [sesion?.id]);
 
   const cerrarSesion = () => {
     setSesion(null);
@@ -41,25 +66,30 @@ function App() {
     return <Login onLoginExitoso={setSesion} />;
   }
 
-  if (sesion.rol !== "Administrador") {
-    return <Inicio sesion={sesion} onCerrarSesion={cerrarSesion} />;
-  }
+  const seccionesPermitidas = obtenerSeccionesPermitidas(sesion.rol);
+  const seccionActiva = seccionesPermitidas.includes(seccion) ? seccion : "inicio";
 
   return (
     <AdminLayout
-      activo={seccion}
+      activo={seccionActiva}
       onNavegar={setSeccion}
       sesion={sesion}
       onCerrarSesion={cerrarSesion}
     >
-      {seccion === "inicio" ? (
+      {seccionActiva === "inicio" ? (
         <Dashboard sesion={sesion} />
-      ) : seccion === "proyectos" ? (
+      ) : seccionActiva === "proyectos" ? (
         <Proyectos sesion={sesion} />
-      ) : seccion === "usuarios" ? (
+      ) : seccionActiva === "usuarios" ? (
         <Usuarios sesion={sesion} />
+      ) : seccionActiva === "roles" ? (
+        <RolesPermisos sesion={sesion} />
+      ) : seccionActiva === "historial" ? (
+        <Historial sesion={sesion} />
+      ) : seccionActiva === "reportes" ? (
+        <Reportes sesion={sesion} />
       ) : (
-        <Proximamente titulo={SECCIONES_PENDIENTES[seccion] ?? ""} />
+        <Proximamente />
       )}
     </AdminLayout>
   );

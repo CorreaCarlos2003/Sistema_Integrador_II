@@ -3,6 +3,11 @@ export default function ProyectosHeader({
   onCambioBusqueda,
   filtroEstado,
   onCambioFiltroEstado,
+  responsables,
+  filtroResponsable,
+  onCambioFiltroResponsable,
+  orden,
+  onCambioOrden,
   vista,
   onCambioVista,
   onNuevoProyecto
@@ -56,9 +61,15 @@ export default function ProyectosHeader({
         <div className="proyectos-header__select-group">
           <label className="proyectos-header__select-label">
             Responsable: 
-            <select className="proyectos-header__select-inline">
+            <select
+              className="proyectos-header__select-inline"
+              value={filtroResponsable}
+              onChange={(e) => onCambioFiltroResponsable(e.target.value)}
+            >
               <option value="Todos">Todos</option>
-              {/* Estático por ahora para coincidir con la UI */}
+              {responsables.map((r) => (
+                <option key={r.id} value={r.id}>{r.nombre}</option>
+              ))}
             </select>
           </label>
         </div>
@@ -66,8 +77,15 @@ export default function ProyectosHeader({
         <div className="proyectos-header__select-group proyectos-header__select-group--orden">
           <label className="proyectos-header__select-label">
             Ordenar por: 
-            <select className="proyectos-header__select-inline">
-              <option value="reciente">Más reciente</option>
+            <select
+              className="proyectos-header__select-inline"
+              value={orden}
+              onChange={(e) => onCambioOrden(e.target.value)}
+            >
+              <option value="recientes">Más recientes</option>
+              <option value="antiguos">Más antiguos</option>
+              <option value="az">A-Z</option>
+              <option value="za">Z-A</option>
             </select>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginLeft: '4px'}}>
               <line x1="21" y1="10" x2="3" y2="10"></line>

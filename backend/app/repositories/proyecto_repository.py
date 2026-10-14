@@ -1,6 +1,16 @@
 from typing import List, Optional, Tuple
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 from app.models.proyecto import Proyecto
+from app.models.usuario import Usuario
+from app.models.usuario_proyecto import UsuarioProyecto
+
+ORDENES_PROYECTO = {
+    "recientes": (Proyecto.fecha_creacion.desc(), Proyecto.id.desc()),
+    "antiguos": (Proyecto.fecha_creacion.asc(), Proyecto.id.asc()),
+    "az": (func.lower(Proyecto.nombre).asc(), Proyecto.id.asc()),
+    "za": (func.lower(Proyecto.nombre).desc(), Proyecto.id.desc()),
+}
 
 
 class ProyectoRepository:
@@ -31,6 +41,8 @@ class ProyectoRepository:
             self,
             busqueda: Optional[str] = None,
             estado: Optional[str] = None,
+            responsable_id: Optional[int] = None,
+            orden: str = "recientes",
             skip: int = 0,
             limit: int = 6,
     ) -> Tuple[List[Proyecto], int]:
@@ -47,13 +59,32 @@ class ProyectoRepository:
                 (Proyecto.nombre.ilike(termino)) | (Proyecto.descripcion.ilike(termino))
             )
 
+        # Filtro por responsable del proyecto
+        if responsable_id:
+            query = query.filter(
+                Proyecto.usuarios.any(
+                    (UsuarioProyecto.usuario_id == responsable_id)
+                    & (UsuarioProyecto.rol_proyecto == "RESPONSABLE")
+                )
+            )
+
         total = query.distinct().count()
 
         proyectos = (
-            query.order_by(Proyecto.id.desc())
+            query.order_by(*ORDENES_PROYECTO.get(orden, ORDENES_PROYECTO["recientes"]))
             .offset(skip)
             .limit(limit)
             .all()
         )
 
         return proyectos, total
+
+    def listar_responsables(self) -> List[Usuario]:
+        return (
+            self.db.query(Usuario)
+            .join(UsuarioProyecto, UsuarioProyecto.usuario_id == Usuario.id)
+            .filter(UsuarioProyecto.rol_proyecto == "RESPONSABLE")
+            .distinct()
+            .order_by(Usuario.nombre)
+            .all()
+        )

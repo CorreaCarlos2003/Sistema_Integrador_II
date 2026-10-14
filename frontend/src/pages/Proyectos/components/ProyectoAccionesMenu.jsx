@@ -9,9 +9,11 @@ const IconPuntos = (p) => (
   </svg>
 )
 
+// Solo se muestra cuando se recibe alguna acción (únicamente el Administrador del sistema).
 export default function ProyectoAccionesMenu({ proyecto, onArchivar, onEliminar, align = 'right' }) {
   const [abierto, setAbierto] = useState(false)
-  const estaArchivado = proyecto.estado?.toLowerCase() === 'archivado'
+
+  if (!onArchivar && !onEliminar) return null
 
   return (
     <div className="proyecto-acciones-menu" onClick={(e) => e.stopPropagation()}>
@@ -29,25 +31,29 @@ export default function ProyectoAccionesMenu({ proyecto, onArchivar, onEliminar,
           className={`proyecto-acciones-menu__dropdown proyecto-acciones-menu__dropdown--${align}`}
           onMouseLeave={() => setAbierto(false)}
         >
-          <button
-            type="button"
-            onClick={() => {
-              setAbierto(false)
-              onArchivar(proyecto)
-            }}
-          >
-            {estaArchivado ? 'Reactivar proyecto' : 'Archivar proyecto'}
-          </button>
-          <button
-            type="button"
-            className="proyecto-acciones-menu__peligro"
-            onClick={() => {
-              setAbierto(false)
-              onEliminar(proyecto)
-            }}
-          >
-            Eliminar proyecto
-          </button>
+          {onArchivar && (
+            <button
+              type="button"
+              onClick={() => {
+                setAbierto(false)
+                onArchivar(proyecto)
+              }}
+            >
+              {proyecto.archivado ? 'Reactivar proyecto' : 'Archivar proyecto'}
+            </button>
+          )}
+          {onEliminar && (
+            <button
+              type="button"
+              className="proyecto-acciones-menu__peligro"
+              onClick={() => {
+                setAbierto(false)
+                onEliminar(proyecto)
+              }}
+            >
+              Eliminar proyecto
+            </button>
+          )}
         </div>
       )}
     </div>

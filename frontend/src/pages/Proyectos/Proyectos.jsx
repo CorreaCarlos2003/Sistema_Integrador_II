@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { actorHeaders } from '../../utils/actor'
 import ProyectosHeader from './components/ProyectosHeader'
 import ProyectoGrid from './components/ProyectoGrid'
 import ProyectoTable from './components/ProyectoTable'
@@ -10,7 +11,7 @@ import './Proyectos.css'
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
 
-export default function Proyectos({ onSeleccionarProyecto }) {
+export default function Proyectos({ sesion, onSeleccionarProyecto }) {
   const [proyectos, setProyectos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -20,6 +21,9 @@ export default function Proyectos({ onSeleccionarProyecto }) {
   // Estados para filtros y paginación
   const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('Todos')
+  const [filtroResponsable, setFiltroResponsable] = useState('Todos')
+  const [orden, setOrden] = useState('recientes')
+  const [responsables, setResponsables] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [vista, setVista] = useState('cards') // 'cards' o 'lista'
   const [page, setPage] = useState(1)
@@ -27,10 +31,11 @@ export default function Proyectos({ onSeleccionarProyecto }) {
   const [totalItems, setTotalItems] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
 
-  // Estado para eliminar/archivar proyectos
+  // Solo el Administrador del sistema puede archivar/reactivar y eliminar proyectos
+  const esAdministrador = sesion?.rol === 'Administrador'
+  const [accionError, setAccionError] = useState(null)
   const [proyectoAEliminar, setProyectoAEliminar] = useState(null)
   const [eliminando, setEliminando] = useState(false)
-  const [accionError, setAccionError] = useState(null)
 
   const fetchProyectos = useCallback(async () => {
     setLoading(true)
@@ -39,10 +44,12 @@ export default function Proyectos({ onSeleccionarProyecto }) {
       // Construir la URL con parámetros
       const params = new URLSearchParams({
         page: page,
-        limit: limit
+        limit: limit,
+        orden: orden,
       })
       if (busqueda) params.append('busqueda', busqueda)
       if (filtroEstado && filtroEstado !== 'Todos') params.append('estado', filtroEstado)
+      if (filtroResponsable && filtroResponsable !== 'Todos') params.append('responsable_id', filtroResponsable)
 
       const response = await fetch(`http://127.0.0.1:8000/proyectos/detalles?${params.toString()}`)
       if (!response.ok) {
@@ -59,7 +66,18 @@ export default function Proyectos({ onSeleccionarProyecto }) {
     } finally {
       setLoading(false)
     }
-  }, [busqueda, filtroEstado, page, limit])
+  }, [busqueda, filtroEstado, filtroResponsable, orden, page, limit])
+
+  // Si falla, el filtro de responsables solo muestra "Todos".
+  const fetchResponsables = () =>
+    fetch(`${API_BASE_URL}/proyectos/responsables`)
+      .then((response) => (response.ok ? response.json() : []))
+      .then(setResponsables)
+      .catch(() => {})
+
+  useEffect(() => {
+    fetchResponsables()
+  }, [])
 
   // Disparar la búsqueda al cambiar filtros o página.
   // Podríamos usar debounce para la búsqueda, pero por simplicidad haremos que se dispare cuando el usuario escribe.
@@ -79,17 +97,20 @@ export default function Proyectos({ onSeleccionarProyecto }) {
 
   const archivarProyecto = async (proyecto) => {
     setAccionError(null)
-    const nuevoEstado = proyecto.estado?.toLowerCase() === 'archivado' ? 'Activo' : 'Archivado'
+    const archivado = !proyecto.archivado
     try {
-      const response = await fetch(`${API_BASE_URL}/proyectos/${proyecto.id}/estado`, {
+      const response = await fetch(`${API_BASE_URL}/proyectos/${proyecto.id}/archivar`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado: nuevoEstado }),
+        headers: { 'Content-Type': 'application/json', ...actorHeaders() },
+        body: JSON.stringify({ archivado }),
       })
-      if (!response.ok) throw new Error('No se pudo cambiar el estado del proyecto')
+      if (!response.ok) {
+        const detalle = await response.json().catch(() => null)
+        throw new Error(detalle?.detail || 'No se pudo archivar el proyecto')
+      }
 
       if (proyectoSeleccionado?.id === proyecto.id) {
-        setProyectoSeleccionado({ ...proyectoSeleccionado, estado: nuevoEstado })
+        setProyectoSeleccionado({ ...proyectoSeleccionado, archivado })
       }
       fetchProyectos()
     } catch (err) {
@@ -109,8 +130,12 @@ export default function Proyectos({ onSeleccionarProyecto }) {
     try {
       const response = await fetch(`${API_BASE_URL}/proyectos/${proyectoAEliminar.id}`, {
         method: 'DELETE',
+        headers: { ...actorHeaders() },
       })
-      if (!response.ok) throw new Error('No se pudo eliminar el proyecto')
+      if (!response.ok) {
+        const detalle = await response.json().catch(() => null)
+        throw new Error(detalle?.detail || 'No se pudo eliminar el proyecto')
+      }
 
       if (proyectoSeleccionado?.id === proyectoAEliminar.id) {
         setProyectoSeleccionado(null)
@@ -118,11 +143,32 @@ export default function Proyectos({ onSeleccionarProyecto }) {
       setProyectoAEliminar(null)
       setPage(1)
       fetchProyectos()
+      fetchResponsables()
     } catch (err) {
       setAccionError(err.message)
+      setProyectoAEliminar(null)
     } finally {
       setEliminando(false)
     }
+  }
+
+  // Tras subir un documento o consultar a la IA, el backend actualiza el estado
+  // y la última actividad del proyecto; se recargan para reflejarlos.
+  const refrescarProyectoSeleccionado = async () => {
+    if (!proyectoSeleccionado) return
+    try {
+      const response = await fetch(`${API_BASE_URL}/proyectos/${proyectoSeleccionado.id}`)
+      if (!response.ok) return
+      const data = await response.json()
+      setProyectoSeleccionado((actual) => (actual?.id === data.id ? { ...actual, ...data } : actual))
+    } catch {
+      // Si falla, se mantiene la información actual del proyecto.
+    }
+  }
+
+  const volverAProyectos = () => {
+    setProyectoSeleccionado(null)
+    fetchProyectos()
   }
 
   const handlePageChange = (newPage) => {
@@ -179,7 +225,10 @@ export default function Proyectos({ onSeleccionarProyecto }) {
       return (
         <ChatProyecto
           proyecto={proyectoSeleccionado}
-          onVolver={() => setVistaProyecto('detalle')}
+          onVolver={() => {
+            setVistaProyecto('detalle')
+            refrescarProyectoSeleccionado()
+          }}
         />
       )
     }
@@ -189,10 +238,11 @@ export default function Proyectos({ onSeleccionarProyecto }) {
         {accionError && <div className="proyectos-error">Error: {accionError}</div>}
         <ProyectoDetalle
           proyecto={proyectoSeleccionado}
-          onVolver={() => setProyectoSeleccionado(null)}
+          onVolver={volverAProyectos}
           onIniciarChat={() => setVistaProyecto('chat')}
-          onArchivar={archivarProyecto}
-          onEliminar={pedirEliminarProyecto}
+          onArchivar={esAdministrador ? archivarProyecto : undefined}
+          onEliminar={esAdministrador ? pedirEliminarProyecto : undefined}
+          onActividad={refrescarProyectoSeleccionado}
         />
         <ConfirmarEliminarProyecto
           proyecto={proyectoAEliminar}
@@ -212,6 +262,11 @@ export default function Proyectos({ onSeleccionarProyecto }) {
         onCambioBusqueda={(val) => { setBusqueda(val); setPage(1); }}
         filtroEstado={filtroEstado}
         onCambioFiltroEstado={(val) => { setFiltroEstado(val); setPage(1); }}
+        responsables={responsables}
+        filtroResponsable={filtroResponsable}
+        onCambioFiltroResponsable={(val) => { setFiltroResponsable(val); setPage(1); }}
+        orden={orden}
+        onCambioOrden={(val) => { setOrden(val); setPage(1); }}
         vista={vista}
         onCambioVista={setVista}
         onNuevoProyecto={() => setIsModalOpen(true)}
@@ -228,15 +283,15 @@ export default function Proyectos({ onSeleccionarProyecto }) {
             <ProyectoGrid
               proyectos={proyectos}
               onSeleccionarProyecto={seleccionarProyecto}
-              onArchivarProyecto={archivarProyecto}
-              onEliminarProyecto={pedirEliminarProyecto}
+              onArchivarProyecto={esAdministrador ? archivarProyecto : undefined}
+              onEliminarProyecto={esAdministrador ? pedirEliminarProyecto : undefined}
             />
           ) : (
             <ProyectoTable
               proyectos={proyectos}
               onSeleccionarProyecto={seleccionarProyecto}
-              onArchivarProyecto={archivarProyecto}
-              onEliminarProyecto={pedirEliminarProyecto}
+              onArchivarProyecto={esAdministrador ? archivarProyecto : undefined}
+              onEliminarProyecto={esAdministrador ? pedirEliminarProyecto : undefined}
             />
           )
         )}
@@ -251,6 +306,7 @@ export default function Proyectos({ onSeleccionarProyecto }) {
         onProjectCreated={() => {
           setPage(1)
           fetchProyectos()
+          fetchResponsables()
         }}
       />
 

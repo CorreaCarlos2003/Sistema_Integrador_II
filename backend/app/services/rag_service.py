@@ -11,6 +11,7 @@ un LLM): el chat devuelve los fragmentos más relevantes para la pregunta.
 """
 
 import os
+import shutil
 
 from docx import Document as WordDocument
 from langchain_core.documents import Document
@@ -101,6 +102,13 @@ def eliminar_documento_indexado(proyecto_id: int, ruta_archivo: str) -> None:
     """Elimina de la colección del proyecto todos los chunks de ese archivo."""
     vectorstore = obtener_vectorstore(proyecto_id)
     vectorstore.delete(where={"source": ruta_archivo})
+
+
+def eliminar_proyecto_indexado(proyecto_id: int) -> None:
+    """Borra del disco los documentos y la colección vectorial del proyecto."""
+    ruta = os.path.join(RAG_STORAGE_DIR, f"proyecto_{proyecto_id}")
+    if os.path.isdir(ruta):
+        shutil.rmtree(ruta)
 
 
 def buscar(proyecto_id: int, pregunta: str, k: int = 5) -> list[dict]:

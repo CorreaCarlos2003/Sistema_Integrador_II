@@ -13,6 +13,7 @@ import {
   IconUsuarioSilueta,
   IconPerfilFooter,
 } from '../../components/icons'
+import { obtenerSeccionesPermitidas } from './secciones'
 
 const SECCIONES = [
   { clave: 'inicio', etiqueta: 'Inicio', Icono: IconNavInicio },
@@ -25,6 +26,8 @@ const SECCIONES = [
 
 export default function AdminLayout({ activo, onNavegar, sesion, onCerrarSesion, children }) {
   const [menuAbierto, setMenuAbierto] = useState(false)
+  const seccionesPermitidas = obtenerSeccionesPermitidas(sesion?.rol)
+  const secciones = SECCIONES.filter(({ clave }) => seccionesPermitidas.includes(clave))
 
   return (
     <div className="panel">
@@ -40,7 +43,7 @@ export default function AdminLayout({ activo, onNavegar, sesion, onCerrarSesion,
         <p className="panel__nav-etiqueta">Navegación</p>
 
         <nav className="panel__nav">
-          {SECCIONES.map(({ clave, etiqueta, Icono }) => (
+          {secciones.map(({ clave, etiqueta, Icono }) => (
             <button
               key={clave}
               type="button"

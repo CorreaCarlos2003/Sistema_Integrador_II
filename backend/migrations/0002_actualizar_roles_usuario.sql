@@ -1,0 +1,7 @@
+ALTER TABLE usuarios DROP CONSTRAINT usuarios_rol_check;
+
+ALTER TABLE usuarios
+    ADD CONSTRAINT usuarios_rol_check
+    CHECK (rol IN ('Administrador', 'Jefe de Proyecto', 'Colaborador'));
+
+ALTER TABLE usuarios ALTER COLUMN rol SET DEFAULT 'Colaborador';
