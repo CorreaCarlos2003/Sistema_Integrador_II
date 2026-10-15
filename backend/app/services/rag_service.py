@@ -14,6 +14,8 @@ import os
 import shutil
 
 from docx import Document as WordDocument
+from docx.table import Table
+from docx.text.paragraph import Paragraph
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -56,28 +58,44 @@ def obtener_vectorstore(proyecto_id: int) -> Chroma:
     )
 
 
-def _cargar_docx(ruta: str) -> Document:
+def extraer_bloques_docx(ruta: str) -> list[tuple[str, str]]:
+    """Extrae párrafos y tablas en el orden en que aparecen en el DOCX."""
     docx = WordDocument(ruta)
+    bloques = []
+    for elemento in docx.element.body.iterchildren():
+        if elemento.tag.endswith("}p"):
+            parrafo = Paragraph(elemento, docx)
+            texto = parrafo.text.strip()
+            if texto:
+                bloques.append((texto, parrafo.style.name))
+        elif elemento.tag.endswith("}tbl"):
+            tabla = Table(elemento, docx)
+            for fila in tabla.rows:
+                texto = " | ".join(celda.text.strip().replace("\n", " / ") for celda in fila.cells)
+                if texto.strip(" |"):
+                    bloques.append((texto, "Tabla"))
+    return bloques
 
-    textos = [p.text.strip() for p in docx.paragraphs if p.text.strip()]
-    contenido = "\n".join(textos)
+
+def _cargar_docx(ruta: str, nombre: str | None = None) -> Document:
+    contenido = "\n".join(texto for texto, _ in extraer_bloques_docx(ruta))
 
     return Document(
         page_content=contenido,
         metadata={
             "source": ruta,
-            "nombre": os.path.basename(ruta),
+            "nombre": nombre or os.path.basename(ruta),
             "tipo": "docx",
         },
     )
 
 
-def indexar_documento(proyecto_id: int, ruta_archivo: str) -> int:
+def indexar_documento(proyecto_id: int, ruta_archivo: str, nombre: str | None = None) -> int:
     """Parte un .docx en chunks, los embebe y los guarda en la colección del proyecto.
 
     Devuelve la cantidad de chunks indexados.
     """
-    documento = _cargar_docx(ruta_archivo)
+    documento = _cargar_docx(ruta_archivo, nombre)
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=RAG_CHUNK_SIZE,
@@ -111,9 +129,21 @@ def eliminar_proyecto_indexado(proyecto_id: int) -> None:
         shutil.rmtree(ruta)
 
 
-def buscar(proyecto_id: int, pregunta: str, k: int = 5) -> list[dict]:
+def buscar(
+    proyecto_id: int, pregunta: str, k: int = 5, rutas_archivo: list[str] | None = None,
+) -> list[dict]:
     vectorstore = obtener_vectorstore(proyecto_id)
-    resultados = vectorstore.similarity_search_with_score(pregunta, k=k)
+    if rutas_archivo is not None:
+        if not rutas_archivo:
+            return []
+        filtro = (
+            {"source": rutas_archivo[0]}
+            if len(rutas_archivo) == 1
+            else {"source": {"$in": rutas_archivo}}
+        )
+        resultados = vectorstore.similarity_search_with_score(pregunta, k=k, filter=filtro)
+    else:
+        resultados = vectorstore.similarity_search_with_score(pregunta, k=k)
 
     return [
         {
@@ -121,6 +151,9 @@ def buscar(proyecto_id: int, pregunta: str, k: int = 5) -> list[dict]:
             "chunk_id": doc.metadata.get("chunk_id", -1),
             "contenido": doc.page_content,
             "score": float(score),
+            "ruta_archivo": doc.metadata.get("source", ""),
+            "pagina": doc.metadata.get("pagina"),
+            "seccion": doc.metadata.get("seccion"),
         }
         for doc, score in resultados
     ]

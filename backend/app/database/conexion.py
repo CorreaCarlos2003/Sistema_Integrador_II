@@ -13,7 +13,7 @@ USER = os.getenv("DB_USER", "postgres")
 PASSWORD = os.getenv("DB_PASSWORD", "root")
 
 postgres_url = (
-    f"postgresql://{urllib.parse.quote_plus(USER)}:{urllib.parse.quote_plus(PASSWORD)}"
+    f"postgresql+psycopg2://{urllib.parse.quote_plus(USER)}:{urllib.parse.quote_plus(PASSWORD)}"
     f"@{SERVER}:{PORT}/{DATABASE}"
 )
 
