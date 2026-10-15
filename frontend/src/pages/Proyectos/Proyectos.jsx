@@ -224,7 +224,9 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
     if (vistaProyecto === 'chat') {
       return (
         <ChatProyecto
+          key={proyectoSeleccionado.id}
           proyecto={proyectoSeleccionado}
+          sesion={sesion}
           onVolver={() => {
             setVistaProyecto('detalle')
             refrescarProyectoSeleccionado()
