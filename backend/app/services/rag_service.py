@@ -10,8 +10,25 @@ Por ahora solo se implementa retrieval (no hay generación de respuesta con
 un LLM): el chat devuelve los fragmentos más relevantes para la pregunta.
 """
 
+import logging
 import os
 import shutil
+import time
+from threading import Lock
+
+from app.core.config import (
+    RAG_CHUNK_OVERLAP,
+    RAG_CHUNK_SIZE,
+    RAG_EMBEDDING_MODEL,
+    RAG_LOCAL_FILES_ONLY,
+    RAG_STORAGE_DIR,
+)
+
+# Estas variables deben establecerse antes de importar las librerias de
+# Hugging Face para impedir sus comprobaciones HTTP en modo local.
+if RAG_LOCAL_FILES_ONLY:
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 
 from docx import Document as WordDocument
 from docx.table import Table
@@ -21,22 +38,79 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
-from app.core.config import (
-    RAG_CHUNK_OVERLAP,
-    RAG_CHUNK_SIZE,
-    RAG_EMBEDDING_MODEL,
-    RAG_STORAGE_DIR,
-)
-
 _embeddings = None
+_embeddings_lock = Lock()
+_estado_lock = Lock()
+_estado_embeddings = {
+    "estado": "pendiente",
+    "mensaje": "El modelo documental aun no ha iniciado.",
+    "segundos_carga": None,
+}
+logger = logging.getLogger(__name__)
+
+
+def _actualizar_estado(estado: str, mensaje: str, segundos_carga: float | None = None) -> None:
+    with _estado_lock:
+        _estado_embeddings.update({
+            "estado": estado,
+            "mensaje": mensaje,
+            "segundos_carga": segundos_carga,
+        })
+
+
+def obtener_estado_embeddings() -> dict:
+    """Devuelve una copia segura del estado de inicializacion del modelo."""
+    with _estado_lock:
+        return dict(_estado_embeddings)
 
 
 def _obtener_embeddings() -> HuggingFaceEmbeddings:
     """Carga el modelo de embeddings una sola vez (es costoso de inicializar)."""
     global _embeddings
-    if _embeddings is None:
-        _embeddings = HuggingFaceEmbeddings(model_name=RAG_EMBEDDING_MODEL)
+    if _embeddings is not None:
+        return _embeddings
+
+    with _embeddings_lock:
+        if _embeddings is not None:
+            return _embeddings
+        opciones_modelo = {"local_files_only": True} if RAG_LOCAL_FILES_ONLY else {}
+        try:
+            _embeddings = HuggingFaceEmbeddings(
+                model_name=RAG_EMBEDDING_MODEL,
+                model_kwargs=opciones_modelo,
+            )
+        except Exception as exc:
+            if RAG_LOCAL_FILES_ONLY:
+                raise RuntimeError(
+                    "No se pudo cargar el modelo de embeddings desde la cache local. "
+                    "Descargalo una vez con RAG_LOCAL_FILES_ONLY=false y conexion a "
+                    "Internet, o revisa la cache de Hugging Face."
+                ) from exc
+            raise
     return _embeddings
+
+
+def precalentar_embeddings() -> None:
+    """Carga el modelo al arrancar la API y registra el tiempo empleado."""
+    inicio = time.perf_counter()
+    _actualizar_estado("cargando", "Preparando el modelo documental.")
+    logger.info(
+        "Precargando modelo de embeddings '%s' (solo local: %s)...",
+        RAG_EMBEDDING_MODEL,
+        RAG_LOCAL_FILES_ONLY,
+    )
+    try:
+        embeddings = _obtener_embeddings()
+        embeddings.embed_query("inicializacion")
+        segundos = round(time.perf_counter() - inicio, 2)
+        _actualizar_estado("listo", "El modelo documental esta listo.", segundos)
+        logger.info("Modelo de embeddings listo en %.2f segundos.", segundos)
+    except Exception as exc:
+        _actualizar_estado(
+            "error",
+            "No se pudo iniciar el modelo documental. Revisa la cache local y la consola del backend.",
+        )
+        logger.exception("No se pudo precalentar el modelo de embeddings: %s", exc)
 
 
 def _directorio_proyecto(proyecto_id: int) -> str:
@@ -90,7 +164,15 @@ def _cargar_docx(ruta: str, nombre: str | None = None) -> Document:
     )
 
 
-def indexar_documento(proyecto_id: int, ruta_archivo: str, nombre: str | None = None) -> int:
+def indexar_documento(
+    proyecto_id: int,
+    ruta_archivo: str,
+    nombre: str | None = None,
+    *,
+    documento_id: int | None = None,
+    version_id: int | None = None,
+    numero_version: str | None = None,
+) -> int:
     """Parte un .docx en chunks, los embebe y los guarda en la colección del proyecto.
 
     Devuelve la cantidad de chunks indexados.
@@ -106,6 +188,12 @@ def indexar_documento(proyecto_id: int, ruta_archivo: str, nombre: str | None = 
     for i, chunk in enumerate(chunks):
         chunk.metadata["chunk_id"] = i
         chunk.metadata["proyecto_id"] = proyecto_id
+        if documento_id is not None:
+            chunk.metadata["documento_id"] = documento_id
+        if version_id is not None:
+            chunk.metadata["version_id"] = version_id
+        if numero_version is not None:
+            chunk.metadata["numero_version"] = numero_version
 
     if not chunks:
         return 0
@@ -152,6 +240,9 @@ def buscar(
             "contenido": doc.page_content,
             "score": float(score),
             "ruta_archivo": doc.metadata.get("source", ""),
+            "documento_id": doc.metadata.get("documento_id"),
+            "version_id": doc.metadata.get("version_id"),
+            "numero_version": doc.metadata.get("numero_version"),
             "pagina": doc.metadata.get("pagina"),
             "seccion": doc.metadata.get("seccion"),
         }

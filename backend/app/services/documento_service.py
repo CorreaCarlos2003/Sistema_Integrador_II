@@ -11,11 +11,16 @@ from app.models.documento_version import DocumentoVersion
 from app.repositories.documento_repository import DocumentoRepository
 from app.repositories.proyecto_repository import ProyectoRepository
 from app.repositories.usuario_repository import UsuarioRepository
-from app.schemas.documento import ChatRespuesta, ChatResultado
+from app.schemas.documento import ChatRespuesta, ChatResultado, DocumentoVersionResponse
 from app.services import rag_service
 from app.services.auditoria_service import registrar_evento
 
 EXTENSIONES_PERMITIDAS = {".docx"}
+
+
+def siguiente_numero_version(numeros_existentes: list[str]) -> str:
+    numeros = [int(numero) for numero in numeros_existentes if numero.isdigit()]
+    return str(max(numeros, default=0) + 1)
 
 
 class DocumentoService:
@@ -48,13 +53,8 @@ class DocumentoService:
             proyecto.estado = "En proceso"
         self.db.commit()
 
-    def listar_documentos(self, proyecto_id: int) -> list[Documento]:
-        self._obtener_proyecto_o_404(proyecto_id)
-        return self.repo.listar_por_proyecto(proyecto_id)
-
-    def subir_documento(self, proyecto_id: int, archivo: UploadFile, actor_id: int = None) -> Documento:
-        proyecto = self._obtener_proyecto_o_404(proyecto_id)
-
+    @staticmethod
+    def _validar_nombre_archivo(archivo: UploadFile) -> str:
         nombre = os.path.basename((archivo.filename or "").replace("\\", "/"))
         extension = os.path.splitext(nombre)[1].lower()
         if extension not in EXTENSIONES_PERMITIDAS:
@@ -62,6 +62,47 @@ class DocumentoService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Solo se admiten archivos .docx por el momento",
             )
+        return nombre
+
+    @staticmethod
+    def _adjuntar_version(documento: Documento, version: DocumentoVersion | None) -> Documento:
+        documento.version_id = version.id if version else None
+        documento.numero_version = version.numero if version else None
+        return documento
+
+    @staticmethod
+    def _eliminar_archivo(ruta_archivo: str) -> None:
+        if os.path.exists(ruta_archivo):
+            os.remove(ruta_archivo)
+
+    def _limpiar_carga(self, proyecto_id: int, ruta_archivo: str, limpiar_indice: bool) -> None:
+        if limpiar_indice:
+            try:
+                rag_service.eliminar_documento_indexado(proyecto_id, ruta_archivo)
+            except Exception:
+                # La limpieza del archivo local no debe omitirse si Chroma no está disponible.
+                pass
+        self._eliminar_archivo(ruta_archivo)
+
+    def listar_documentos(self, proyecto_id: int) -> list[Documento]:
+        self._obtener_proyecto_o_404(proyecto_id)
+        documentos = self.repo.listar_por_proyecto(proyecto_id)
+        if not documentos:
+            return []
+        versiones = (
+            self.db.query(DocumentoVersion)
+            .filter(
+                DocumentoVersion.documento_id.in_([documento.id for documento in documentos]),
+                DocumentoVersion.vigente.is_(True),
+            )
+            .all()
+        )
+        vigentes = {version.documento_id: version for version in versiones}
+        return [self._adjuntar_version(documento, vigentes.get(documento.id)) for documento in documentos]
+
+    def subir_documento(self, proyecto_id: int, archivo: UploadFile, actor_id: int = None) -> Documento:
+        proyecto = self._obtener_proyecto_o_404(proyecto_id)
+        nombre = self._validar_nombre_archivo(archivo)
 
         directorio = rag_service.ruta_documentos(proyecto_id)
         ruta_archivo = os.path.join(directorio, f"{uuid4().hex}_{nombre}")
@@ -69,47 +110,61 @@ class DocumentoService:
         with open(ruta_archivo, "wb") as destino:
             destino.write(archivo.file.read())
 
-        try:
-            chunks = rag_service.indexar_documento(proyecto_id, ruta_archivo, nombre)
-        except Exception as exc:
-            os.remove(ruta_archivo)
-            registrar_evento(
-                self.db,
-                actor_id=actor_id,
-                modulo="proyectos",
-                tipo="alerta",
-                descripcion=f"Documento '{nombre}' no pudo ser procesado por IA en '{proyecto.nombre}'",
-                referencia="DOC-ERR",
-                proyecto_id=proyecto_id,
-            )
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"No se pudo procesar el documento: {exc}",
-            ) from exc
-
         documento = Documento(
             proyecto_id=proyecto_id,
             nombre=nombre,
             ruta_archivo=ruta_archivo,
-            chunks_indexados=chunks,
+            chunks_indexados=0,
         )
+        version = DocumentoVersion(
+            documento_id=0,
+            numero="1",
+            nombre=nombre,
+            ruta_archivo=ruta_archivo,
+            chunks_indexados=0,
+            vigente=False,
+        )
+        indexacion_iniciada = False
         try:
             self.db.add(documento)
             self.db.flush()
-            self.db.add(DocumentoVersion(
+            version.documento_id = documento.id
+            self.db.add(version)
+            self.db.flush()
+            indexacion_iniciada = True
+            chunks = rag_service.indexar_documento(
+                proyecto_id,
+                ruta_archivo,
+                nombre,
                 documento_id=documento.id,
-                numero="1",
-                nombre=documento.nombre,
-                ruta_archivo=documento.ruta_archivo,
-                vigente=True,
-            ))
+                version_id=version.id,
+                numero_version=version.numero,
+            )
+            documento.chunks_indexados = chunks
+            version.chunks_indexados = chunks
+            version.vigente = True
             self.db.commit()
             self.db.refresh(documento)
-        except Exception:
+            self.db.refresh(version)
+        except Exception as exc:
             self.db.rollback()
-            rag_service.eliminar_documento_indexado(proyecto_id, ruta_archivo)
-            os.remove(ruta_archivo)
-            raise
+            self._limpiar_carga(proyecto_id, ruta_archivo, indexacion_iniciada)
+            try:
+                registrar_evento(
+                    self.db,
+                    actor_id=actor_id,
+                    modulo="proyectos",
+                    tipo="alerta",
+                    descripcion=f"Documento '{nombre}' no pudo ser procesado por IA en '{proyecto.nombre}'",
+                    referencia="DOC-ERR",
+                    proyecto_id=proyecto_id,
+                )
+            except Exception:
+                self.db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"No se pudo procesar el documento: {exc}",
+            ) from exc
 
         self._registrar_actividad(proyecto, iniciar=True)
 
@@ -124,7 +179,112 @@ class DocumentoService:
             proyecto_id=proyecto_id,
             actor_nombre_fallback="Sistema",
         )
-        return documento
+        return self._adjuntar_version(documento, version)
+
+    def listar_versiones_documento(
+        self, proyecto_id: int, documento_id: int,
+    ) -> list[DocumentoVersionResponse]:
+        self._obtener_proyecto_o_404(proyecto_id)
+        documento = self.repo.obtener_por_id(documento_id)
+        if documento is None or documento.proyecto_id != proyecto_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Documento con ID {documento_id} no encontrado en este proyecto",
+            )
+        return (
+            self.db.query(DocumentoVersion)
+            .filter(DocumentoVersion.documento_id == documento_id)
+            .order_by(DocumentoVersion.id.desc())
+            .all()
+        )
+
+    def subir_version(
+        self, proyecto_id: int, documento_id: int, archivo: UploadFile, actor_id: int = None,
+    ) -> DocumentoVersion:
+        proyecto = self._obtener_proyecto_o_404(proyecto_id)
+        nombre = self._validar_nombre_archivo(archivo)
+        documento = (
+            self.db.query(Documento)
+            .filter(Documento.id == documento_id, Documento.proyecto_id == proyecto_id)
+            .with_for_update()
+            .first()
+        )
+        if documento is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Documento con ID {documento_id} no encontrado en este proyecto",
+            )
+
+        versiones = (
+            self.db.query(DocumentoVersion)
+            .filter(DocumentoVersion.documento_id == documento_id)
+            .order_by(DocumentoVersion.id)
+            .all()
+        )
+        siguiente_numero = siguiente_numero_version([version.numero for version in versiones])
+        ruta_archivo = os.path.join(
+            rag_service.ruta_documentos(proyecto_id),
+            f"{uuid4().hex}_{nombre}",
+        )
+        with open(ruta_archivo, "wb") as destino:
+            destino.write(archivo.file.read())
+
+        version = DocumentoVersion(
+            documento_id=documento_id,
+            numero=siguiente_numero,
+            nombre=nombre,
+            ruta_archivo=ruta_archivo,
+            chunks_indexados=0,
+            vigente=False,
+        )
+        indexacion_iniciada = False
+        try:
+            self.db.add(version)
+            self.db.flush()
+            indexacion_iniciada = True
+            chunks = rag_service.indexar_documento(
+                proyecto_id,
+                ruta_archivo,
+                nombre,
+                documento_id=documento_id,
+                version_id=version.id,
+                numero_version=version.numero,
+            )
+            version.chunks_indexados = chunks
+            for anterior in versiones:
+                anterior.vigente = False
+            self.db.flush()
+            version.vigente = True
+            documento.nombre = nombre
+            documento.ruta_archivo = ruta_archivo
+            documento.chunks_indexados = chunks
+            documento.fecha_subida = datetime.now()
+            self.db.commit()
+            self.db.refresh(version)
+        except Exception as exc:
+            self.db.rollback()
+            self._limpiar_carga(proyecto_id, ruta_archivo, indexacion_iniciada)
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"No se pudo procesar la nueva versión: {exc}",
+            ) from exc
+
+        self._registrar_actividad(proyecto, iniciar=True)
+        actor_nombre = self._nombre_actor(actor_id)
+        registrar_evento(
+            self.db,
+            actor_id=actor_id,
+            modulo="proyectos",
+            tipo="proceso",
+            descripcion=(
+                f"{actor_nombre} subió la versión {version.numero} de '{nombre}' "
+                f"en '{proyecto.nombre}'"
+            ),
+            referencia=f"DOC-VER-{version.id}",
+            proyecto_id=proyecto_id,
+            actor_nombre_fallback="Sistema",
+        )
+        return version
 
     def eliminar_documento(self, proyecto_id: int, id_documento: int, actor_id: int = None) -> dict:
         proyecto = self._obtener_proyecto_o_404(proyecto_id)
@@ -137,9 +297,15 @@ class DocumentoService:
             )
 
         nombre = documento.nombre
-        rag_service.eliminar_documento_indexado(proyecto_id, documento.ruta_archivo)
-        if os.path.exists(documento.ruta_archivo):
-            os.remove(documento.ruta_archivo)
+        versiones = (
+            self.db.query(DocumentoVersion)
+            .filter(DocumentoVersion.documento_id == documento.id)
+            .all()
+        )
+        rutas = {documento.ruta_archivo, *(version.ruta_archivo for version in versiones)}
+        for ruta in rutas:
+            rag_service.eliminar_documento_indexado(proyecto_id, ruta)
+            self._eliminar_archivo(ruta)
 
         self.repo.eliminar(documento)
 

@@ -2,8 +2,10 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.chat_auth import usuario_chat, verificar_consulta_proyecto
+from app.core.rag_readiness import requerir_rag_listo
 from app.database.conexion import get_db
 from app.models.usuario import Usuario
+from app.schemas.documento import DocumentoVersionResponse
 from app.schemas.chat_v2 import (
     ChatEnviar,
     ChatEnviarRespuesta,
@@ -13,7 +15,6 @@ from app.schemas.chat_v2 import (
     ConversacionEditar,
     ConversacionRespuesta,
     ConversacionesPagina,
-    DocumentoVersionRespuesta,
 )
 from app.services.chat_v2_service import ChatV2Service
 
@@ -30,7 +31,7 @@ def servicio(
     return ChatV2Service(db, usuario.id)
 
 
-@versiones_router.get("/versiones", response_model=list[DocumentoVersionRespuesta])
+@versiones_router.get("/versiones", response_model=list[DocumentoVersionResponse])
 def listar_versiones(proyecto_id: int, chat: ChatV2Service = Depends(servicio)):
     return chat.listar_versiones(proyecto_id)
 
@@ -78,6 +79,7 @@ def restaurar(proyecto_id: int, conversacion_id: int, chat: ChatV2Service = Depe
 def enviar(
     proyecto_id: int, conversacion_id: int, datos: ChatEnviar,
     chat: ChatV2Service = Depends(servicio),
+    _rag: None = Depends(requerir_rag_listo),
 ):
     return chat.enviar(proyecto_id, conversacion_id, datos)
 
@@ -86,6 +88,7 @@ def enviar(
 def reintentar(
     proyecto_id: int, conversacion_id: int, mensaje_id: int,
     chat: ChatV2Service = Depends(servicio),
+    _rag: None = Depends(requerir_rag_listo),
 ):
     return chat.reintentar(proyecto_id, conversacion_id, mensaje_id)
 

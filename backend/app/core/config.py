@@ -4,6 +4,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+def _env_bool(nombre: str, valor_predeterminado: bool) -> bool:
+    valor = os.getenv(nombre)
+    if valor is None:
+        return valor_predeterminado
+    return valor.strip().lower() in {"1", "true", "yes", "si", "on"}
+
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "cambiar-en-produccion")
 ALGORITMO = "HS256"
 SESION_DURACION_HORAS = 8
@@ -16,6 +23,10 @@ RAG_STORAGE_DIR = "./rag_storage"
 RAG_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 RAG_CHUNK_SIZE = 1000
 RAG_CHUNK_OVERLAP = 200
+# Evita comprobaciones de red de Hugging Face cuando el modelo ya esta en cache.
+RAG_LOCAL_FILES_ONLY = _env_bool("RAG_LOCAL_FILES_ONLY", True)
+# Carga el modelo durante el arranque para que la primera subida no pague ese costo.
+RAG_PRELOAD_EMBEDDINGS = _env_bool("RAG_PRELOAD_EMBEDDINGS", True)
 
 # Chat documental. Los valores pueden ajustarse según el plan de Groq.
 GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")

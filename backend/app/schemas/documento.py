@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -10,6 +10,8 @@ class DocumentoResponse(BaseModel):
     nombre: str
     chunks_indexados: int
     fecha_subida: datetime
+    version_id: Optional[int] = None
+    numero_version: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -29,3 +31,17 @@ class ChatResultado(BaseModel):
 
 class ChatRespuesta(BaseModel):
     resultados: List[ChatResultado]
+
+
+class DocumentoVersionResponse(BaseModel):
+    id: int
+    version_id: int
+    documento_id: int
+    numero: str
+    nombre: str
+    chunks_indexados: int
+    vigente: bool
+    fecha: datetime
+
+    class Config:
+        from_attributes = True
