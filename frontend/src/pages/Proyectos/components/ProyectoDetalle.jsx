@@ -2,6 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { getInitials, getAvatarColors } from '../../../utils/avatarUtils'
 import { actorHeaders } from '../../../utils/actor'
 import ProyectoAccionesMenu from './ProyectoAccionesMenu'
+import EstadoRag from './EstadoRag'
+import HistorialVersiones from './HistorialVersiones'
+import ModalNuevaVersion from './ModalNuevaVersion'
 import './ProyectoDetalle.css'
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
@@ -65,6 +68,13 @@ const IconEliminar = (p) => (
   </svg>
 )
 
+const IconHistorial = (p) => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...p}>
+    <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+    <path d="M3 3v5h5M12 7v5l3 2" />
+  </svg>
+)
+
 function formatFecha(fechaStr) {
   if (!fechaStr) return ''
   // Las fechas "solo día" (YYYY-MM-DD, ej. fecha_fin) se parsean en UTC
@@ -79,15 +89,30 @@ function formatFecha(fechaStr) {
   return new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short', year: 'numeric' }).format(fecha)
 }
 
-export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onArchivar, onEliminar, onActividad }) {
+export default function ProyectoDetalle({
+  proyecto,
+  onVolver,
+  onIniciarChat,
+  onArchivar,
+  onEliminar,
+  onActividad,
+  estadoRag,
+  cargaDocumentos,
+}) {
   const [tab, setTab] = useState('documentos')
   const [busqueda, setBusqueda] = useState('')
 
   const [documentos, setDocumentos] = useState([])
   const [cargandoDocumentos, setCargandoDocumentos] = useState(true)
   const [errorDocumentos, setErrorDocumentos] = useState(null)
-  const [subiendo, setSubiendo] = useState(false)
+  const [documentoVersion, setDocumentoVersion] = useState(null)
+  const [documentoHistorial, setDocumentoHistorial] = useState(null)
+  const [versiones, setVersiones] = useState([])
+  const [cargandoVersiones, setCargandoVersiones] = useState(false)
+  const [errorVersiones, setErrorVersiones] = useState(null)
   const inputArchivoRef = useRef(null)
+  const ragListo = estadoRag?.estado === 'listo'
+  const subiendo = cargaDocumentos?.activa
 
   const estado = proyecto.archivado ? 'archivado' : (proyecto.estado || '').toLowerCase()
   const miembros = proyecto.miembros || []
@@ -109,6 +134,8 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
   }
 
   useEffect(() => {
+    // La consulta asincrona sincroniza la tabla con el proyecto seleccionado.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchDocumentos()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proyecto.id])
@@ -124,29 +151,50 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
     e.target.value = ''
     if (!archivo) return
 
-    setSubiendo(true)
     setErrorDocumentos(null)
     try {
-      const formData = new FormData()
-      formData.append('archivo', archivo)
-
-      const response = await fetch(`${API_BASE_URL}/proyectos/${proyecto.id}/documentos`, {
-        method: 'POST',
-        headers: { ...actorHeaders() },
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const detalle = await response.json().catch(() => null)
-        throw new Error(detalle?.detail || 'No se pudo subir el documento')
-      }
-
+      await cargaDocumentos.subirDocumento({ proyectoId: proyecto.id, archivo })
       await fetchDocumentos()
       onActividad?.()
     } catch (err) {
-      setErrorDocumentos(err.message)
+      if (err.message !== 'Carga cancelada') setErrorDocumentos(err.message)
+    }
+  }
+
+  const handleSubirVersion = async (archivo) => {
+    if (!documentoVersion) return
+    setErrorDocumentos(null)
+    try {
+      await cargaDocumentos.subirVersion({
+        proyectoId: proyecto.id,
+        documento: documentoVersion,
+        archivo,
+      })
+      setDocumentoVersion(null)
+      await fetchDocumentos()
+      onActividad?.()
+    } catch (err) {
+      if (err.message === 'Carga cancelada') setDocumentoVersion(null)
+      else setErrorDocumentos(err.message)
+    }
+  }
+
+  const abrirHistorial = async (documento) => {
+    setDocumentoHistorial(documento)
+    setVersiones([])
+    setErrorVersiones(null)
+    setCargandoVersiones(true)
+    try {
+      const response = await fetch(`${API_BASE_URL}/proyectos/${proyecto.id}/documentos/${documento.id}/versiones`)
+      if (!response.ok) {
+        const detalle = await response.json().catch(() => null)
+        throw new Error(detalle?.detail || 'No se pudo cargar el historial de versiones')
+      }
+      setVersiones(await response.json())
+    } catch (err) {
+      setErrorVersiones(err.message)
     } finally {
-      setSubiendo(false)
+      setCargandoVersiones(false)
     }
   }
 
@@ -231,29 +279,33 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
         </div>
       </div>
 
+      <EstadoRag estado={estadoRag?.estado} mensaje={estadoRag?.mensaje} onReintentar={estadoRag?.refrescar} />
+
       <div className="proyecto-detalle__acciones">
         <button
           type="button"
           className="proyecto-detalle__accion proyecto-detalle__accion--principal"
           onClick={() => onIniciarChat?.()}
+          disabled={!ragListo}
+          title={!ragListo ? 'El asistente documental todavía se está preparando' : undefined}
         >
           <span className="proyecto-detalle__accion-info">
             <span className="proyecto-detalle__accion-icono proyecto-detalle__accion-icono--principal">
               <IconChat />
             </span>
-            <span className="proyecto-detalle__accion-titulo">Iniciar Chat con IA</span>
+            <span className="proyecto-detalle__accion-titulo">{ragListo ? 'Iniciar Chat con IA' : 'Preparando Chat con IA'}</span>
           </span>
           <span className="proyecto-detalle__accion-btn proyecto-detalle__accion-btn--oscuro">Consultar</span>
         </button>
 
-        <button type="button" className="proyecto-detalle__accion" onClick={handleSubirClick} disabled={subiendo}>
+        <button type="button" className="proyecto-detalle__accion" onClick={handleSubirClick} disabled={subiendo || !ragListo}>
           <span className="proyecto-detalle__accion-info">
             <span className="proyecto-detalle__accion-icono">
               <IconSubir />
             </span>
             <span className="proyecto-detalle__accion-titulo">Subir Documentos</span>
           </span>
-          <span className="proyecto-detalle__accion-btn">{subiendo ? 'Subiendo...' : 'Seleccionar'}</span>
+          <span className="proyecto-detalle__accion-btn">{!ragListo ? 'Preparando...' : subiendo ? 'Subiendo...' : 'Seleccionar'}</span>
         </button>
         <input
           ref={inputArchivoRef}
@@ -325,6 +377,7 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
                     </span>
                     <div className="proyecto-detalle__archivo-info">
                       <span className="proyecto-detalle__archivo-nombre">{doc.nombre}</span>
+                      <span className="proyecto-detalle__archivo-version">Versión vigente: v{doc.numero_version || '1'}</span>
                     </div>
                   </div>
 
@@ -344,6 +397,23 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
                   </div>
 
                   <div className="proyecto-detalle__col-comandos">
+                    <button
+                      type="button"
+                      className="proyecto-detalle__btn-version"
+                      onClick={() => abrirHistorial(doc)}
+                      title="Ver historial de versiones"
+                    >
+                      <IconHistorial /> Historial
+                    </button>
+                    <button
+                      type="button"
+                      className="proyecto-detalle__btn-version proyecto-detalle__btn-version--principal"
+                      onClick={() => setDocumentoVersion(doc)}
+                      disabled={!ragListo || subiendo}
+                      title={!ragListo ? 'El modelo documental todavía se está preparando' : 'Subir nueva versión'}
+                    >
+                      <IconSubir /> Nueva versión
+                    </button>
                     <button
                       type="button"
                       className="proyecto-detalle__btn-icono"
@@ -386,6 +456,20 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
           )}
         </div>
       )}
+      <ModalNuevaVersion
+        key={documentoVersion?.id || 'cerrado'}
+        documento={documentoVersion}
+        cargando={subiendo}
+        onCancelar={() => setDocumentoVersion(null)}
+        onConfirmar={handleSubirVersion}
+      />
+      <HistorialVersiones
+        documento={documentoHistorial}
+        versiones={versiones}
+        cargando={cargandoVersiones}
+        error={errorVersiones}
+        onCerrar={() => setDocumentoHistorial(null)}
+      />
     </div>
   )
 }

@@ -7,11 +7,16 @@ import ProyectoDetalle from './components/ProyectoDetalle'
 import ChatProyecto from './components/ChatProyecto'
 import ModalNuevoProyecto from './components/ModalNuevoProyecto'
 import ConfirmarEliminarProyecto from './components/ConfirmarEliminarProyecto'
+import ProgresoCargaDocumento from './components/ProgresoCargaDocumento'
+import useCargaDocumento from './hooks/useCargaDocumento'
+import useEstadoRag from './hooks/useEstadoRag'
 import './Proyectos.css'
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
 
 export default function Proyectos({ sesion, onSeleccionarProyecto }) {
+  const estadoRag = useEstadoRag()
+  const cargaDocumentos = useCargaDocumento()
   const [proyectos, setProyectos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -223,15 +228,19 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
   if (proyectoSeleccionado) {
     if (vistaProyecto === 'chat') {
       return (
-        <ChatProyecto
-          key={proyectoSeleccionado.id}
-          proyecto={proyectoSeleccionado}
-          sesion={sesion}
-          onVolver={() => {
-            setVistaProyecto('detalle')
-            refrescarProyectoSeleccionado()
-          }}
-        />
+        <>
+          <ChatProyecto
+            key={proyectoSeleccionado.id}
+            proyecto={proyectoSeleccionado}
+            sesion={sesion}
+            estadoRag={estadoRag}
+            onVolver={() => {
+              setVistaProyecto('detalle')
+              refrescarProyectoSeleccionado()
+            }}
+          />
+          <ProgresoCargaDocumento carga={cargaDocumentos.carga} onCancelar={cargaDocumentos.cancelar} onCerrar={cargaDocumentos.cerrar} />
+        </>
       )
     }
 
@@ -245,6 +254,8 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
           onArchivar={esAdministrador ? archivarProyecto : undefined}
           onEliminar={esAdministrador ? pedirEliminarProyecto : undefined}
           onActividad={refrescarProyectoSeleccionado}
+          estadoRag={estadoRag}
+          cargaDocumentos={cargaDocumentos}
         />
         <ConfirmarEliminarProyecto
           proyecto={proyectoAEliminar}
@@ -252,6 +263,7 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
           onConfirmar={confirmarEliminarProyecto}
           loading={eliminando}
         />
+        <ProgresoCargaDocumento carga={cargaDocumentos.carga} onCancelar={cargaDocumentos.cancelar} onCerrar={cargaDocumentos.cerrar} />
       </>
     )
   }
@@ -318,6 +330,7 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
         onConfirmar={confirmarEliminarProyecto}
         loading={eliminando}
       />
+      <ProgresoCargaDocumento carga={cargaDocumentos.carga} onCancelar={cargaDocumentos.cancelar} onCerrar={cargaDocumentos.cerrar} />
     </div>
   )
 }
