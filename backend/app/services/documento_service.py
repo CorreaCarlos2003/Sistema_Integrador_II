@@ -1,11 +1,13 @@
 import os
 import time
+from uuid import uuid4
 from datetime import datetime
 
 from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.models.documento import Documento
+from app.models.documento_version import DocumentoVersion
 from app.repositories.documento_repository import DocumentoRepository
 from app.repositories.proyecto_repository import ProyectoRepository
 from app.repositories.usuario_repository import UsuarioRepository
@@ -53,7 +55,7 @@ class DocumentoService:
     def subir_documento(self, proyecto_id: int, archivo: UploadFile, actor_id: int = None) -> Documento:
         proyecto = self._obtener_proyecto_o_404(proyecto_id)
 
-        nombre = archivo.filename or ""
+        nombre = os.path.basename((archivo.filename or "").replace("\\", "/"))
         extension = os.path.splitext(nombre)[1].lower()
         if extension not in EXTENSIONES_PERMITIDAS:
             raise HTTPException(
@@ -62,13 +64,13 @@ class DocumentoService:
             )
 
         directorio = rag_service.ruta_documentos(proyecto_id)
-        ruta_archivo = os.path.join(directorio, nombre)
+        ruta_archivo = os.path.join(directorio, f"{uuid4().hex}_{nombre}")
 
         with open(ruta_archivo, "wb") as destino:
             destino.write(archivo.file.read())
 
         try:
-            chunks = rag_service.indexar_documento(proyecto_id, ruta_archivo)
+            chunks = rag_service.indexar_documento(proyecto_id, ruta_archivo, nombre)
         except Exception as exc:
             os.remove(ruta_archivo)
             registrar_evento(
@@ -92,8 +94,19 @@ class DocumentoService:
             chunks_indexados=chunks,
         )
         try:
-            documento = self.repo.guardar(documento)
+            self.db.add(documento)
+            self.db.flush()
+            self.db.add(DocumentoVersion(
+                documento_id=documento.id,
+                numero="1",
+                nombre=documento.nombre,
+                ruta_archivo=documento.ruta_archivo,
+                vigente=True,
+            ))
+            self.db.commit()
+            self.db.refresh(documento)
         except Exception:
+            self.db.rollback()
             rag_service.eliminar_documento_indexado(proyecto_id, ruta_archivo)
             os.remove(ruta_archivo)
             raise

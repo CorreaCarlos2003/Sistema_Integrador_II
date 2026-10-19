@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SECRET_KEY = "cambiar-en-produccion"
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "cambiar-en-produccion")
 ALGORITMO = "HS256"
 SESION_DURACION_HORAS = 8
 
@@ -15,6 +15,20 @@ RAG_STORAGE_DIR = "./rag_storage"
 RAG_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 RAG_CHUNK_SIZE = 1000
 RAG_CHUNK_OVERLAP = 200
+
+# Chat documental. Los valores pueden ajustarse según el plan de Groq.
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+CHAT_RETRIEVAL_K = int(os.getenv("CHAT_RETRIEVAL_K", "5"))
+CHAT_MAX_DISTANCE = float(os.getenv("CHAT_MAX_DISTANCE", "1.3"))
+CHAT_HISTORY_TURNS = int(os.getenv("CHAT_HISTORY_TURNS", "8"))
+CHAT_MAX_QUESTION_CHARS = int(os.getenv("CHAT_MAX_QUESTION_CHARS", "2000"))
+CHAT_MAX_ANSWER_TOKENS = int(os.getenv("CHAT_MAX_ANSWER_TOKENS", "500"))
+CHAT_MAX_CONTEXT_CHARS = int(os.getenv("CHAT_MAX_CONTEXT_CHARS", "24000"))
+CHAT_MAX_COMPARISON_CHARS = int(os.getenv("CHAT_MAX_COMPARISON_CHARS", "45000"))
+CHAT_MAX_CHANGE_CHARS = int(os.getenv("CHAT_MAX_CHANGE_CHARS", "4000"))
+CHAT_TIMEOUT_SECONDS = int(os.getenv("CHAT_TIMEOUT_SECONDS", "45"))
+CHAT_MAX_RETRIES = int(os.getenv("CHAT_MAX_RETRIES", "1"))
+CHAT_RATE_LIMIT_PER_MINUTE = int(os.getenv("CHAT_RATE_LIMIT_PER_MINUTE", "10"))
 
 # Correo (invitaciones a usuarios nuevos, recuperación de contraseña)
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
