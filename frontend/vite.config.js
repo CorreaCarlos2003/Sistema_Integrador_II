@@ -12,6 +12,7 @@ export default defineConfig({
       '/historial': 'http://127.0.0.1:8000',
       '/reportes': 'http://127.0.0.1:8000',
       '/inicio': 'http://127.0.0.1:8000',
+      '/salud': 'http://127.0.0.1:8000',
     },
   },
 })

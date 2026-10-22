@@ -1,0 +1,33 @@
+.progreso-carga {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 1200;
+  width: min(286px, calc(100vw - 28px));
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid rgba(128, 118, 97, 0.22);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 8px 24px rgba(28, 28, 24, 0.11);
+  color: #1c1c18;
+}
+
+.progreso-carga__cabecera { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
+.progreso-carga__cabecera button { border: 0; background: none; padding: 0 2px; color: #807661; font-size: 18px; line-height: 1; cursor: pointer; }
+.progreso-carga__archivo, .progreso-carga__destino, .progreso-carga__detalle, .progreso-carga__error { display: block; margin-top: 3px; font-size: 10px; color: #807661; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.progreso-carga__medidor { width: 56px; height: 56px; margin: 10px auto 7px; padding: 5px; border-radius: 50%; background: conic-gradient(#156965 var(--progreso-grados), #ebe8e1 0); box-sizing: border-box; }
+.progreso-carga__medidor > div { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; border-radius: 50%; background: #fff; font: 700 10px var(--fuente-mono, monospace); }
+.progreso-carga__medidor--indeterminado { background: conic-gradient(#f4c430 0 22%, #ebe8e1 22% 100%); animation: progreso-carga-girar 1s linear infinite; }
+.progreso-carga__medidor--indeterminado > div { animation: progreso-carga-girar-inverso 1s linear infinite; }
+.progreso-carga__estado { display: block; text-align: center; font-size: 11px; }
+.progreso-carga__detalle { text-align: center; color: #156965; }
+.progreso-carga__error { white-space: normal; color: #a3311b; }
+.progreso-carga__cancelar { display: block; margin: 9px 0 0 auto; border: 0; border-radius: 5px; background: #f1eee7; padding: 5px 9px; color: #4e4634; font-size: 10px; cursor: pointer; }
+.progreso-carga--completado { border-color: #9bd8d2; }
+.progreso-carga--error { border-color: #efb4a9; }
+
+@keyframes progreso-carga-girar { to { transform: rotate(360deg); } }
+@keyframes progreso-carga-girar-inverso { to { transform: rotate(-360deg); } }
+
+@media (max-width: 520px) { .progreso-carga { right: 14px; bottom: 14px; } }

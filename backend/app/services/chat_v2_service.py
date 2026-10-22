@@ -38,9 +38,9 @@ from app.schemas.chat_v2 import (
     ConversacionDetalle,
     ConversacionRespuesta,
     ConversacionesPagina,
-    DocumentoVersionRespuesta,
     MensajeRespuesta,
 )
+from app.schemas.documento import DocumentoVersionResponse
 from app.services import groq_service, rag_service
 from app.services.auditoria_service import registrar_evento
 
@@ -53,6 +53,14 @@ def _normalizar(texto: str) -> str:
 
 def _ms(inicio: float) -> int:
     return int((time.perf_counter() - inicio) * 1000)
+
+
+def _nivel_encabezado(estilo: str) -> int | None:
+    """Convierte estilos Heading/Título en un nivel comparable."""
+    coincidencia = re.fullmatch(r"(?:heading|titulo)\s*(\d+)?", _normalizar(estilo))
+    if coincidencia is None:
+        return None
+    return int(coincidencia.group(1)) if coincidencia.group(1) else 0
 
 
 class ChatV2Service:
@@ -193,7 +201,7 @@ class ChatV2Service:
             .all()
         )
 
-    def listar_versiones(self, proyecto_id: int) -> list[DocumentoVersionRespuesta]:
+    def listar_versiones(self, proyecto_id: int) -> list[DocumentoVersionResponse]:
         self._proyecto(proyecto_id)
         pares = (
             self.db.query(Documento, DocumentoVersion)
@@ -203,11 +211,13 @@ class ChatV2Service:
             .all()
         )
         return [
-            DocumentoVersionRespuesta(
-                documento_id=documento.id,
+            DocumentoVersionResponse(
+                id=version.id,
                 version_id=version.id,
+                documento_id=documento.id,
                 numero=version.numero,
                 nombre=version.nombre,
+                chunks_indexados=version.chunks_indexados,
                 vigente=version.vigente,
                 fecha=version.fecha,
             )
@@ -569,12 +579,13 @@ class ChatV2Service:
         if len(indices) != 1:
             raise HTTPException(status_code=422, detail="La sección no se identificó de forma inequívoca")
         inicio = indices[0]
-        nivel = bloques[inicio][1]
-        if not (nivel.lower().startswith("heading") or nivel.lower().startswith("título")):
+        nivel = _nivel_encabezado(bloques[inicio][1])
+        if nivel is None:
             raise HTTPException(status_code=422, detail="La sección no tiene un encabezado identificable")
         fin = len(bloques)
         for i in range(inicio + 1, len(bloques)):
-            if bloques[i][1] == nivel:
+            siguiente_nivel = _nivel_encabezado(bloques[i][1])
+            if siguiente_nivel is not None and siguiente_nivel <= nivel:
                 fin = i
                 break
         return "\n".join(texto for texto, _ in bloques[inicio:fin])

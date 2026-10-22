@@ -74,15 +74,6 @@ class DocumentoSeleccion(BaseModel):
     version_id: int = Field(..., gt=0)
 
 
-class DocumentoVersionRespuesta(BaseModel):
-    documento_id: int
-    version_id: int
-    numero: str
-    nombre: str
-    vigente: bool
-    fecha: datetime
-
-
 class ComparacionEnviar(BaseModel):
     origen: DocumentoSeleccion
     destino: DocumentoSeleccion

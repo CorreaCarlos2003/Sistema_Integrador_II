@@ -11,6 +11,8 @@ class DocumentoResponse(BaseModel):
     chunks_indexados: int
     fecha_subida: datetime
     estado_aprobacion: str
+    version_id: Optional[int] = None
+    numero_version: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -42,3 +44,17 @@ class ChatResultado(BaseModel):
 
 class ChatRespuesta(BaseModel):
     resultados: List[ChatResultado]
+
+
+class DocumentoVersionResponse(BaseModel):
+    id: int
+    version_id: int
+    documento_id: int
+    numero: str
+    nombre: str
+    chunks_indexados: int
+    vigente: bool
+    fecha: datetime
+
+    class Config:
+        from_attributes = True

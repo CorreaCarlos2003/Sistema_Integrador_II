@@ -6,6 +6,7 @@ import { formatoRelativo } from '../../../utils/tiempo'
 import DocumentoPendienteModal from './DocumentoPendienteModal'
 import DocumentoSubidoModal from './DocumentoSubidoModal'
 import SubirDocumentoInfoModal from './SubirDocumentoInfoModal'
+import EstadoRag from './EstadoRag'
 import './ChatProyecto.css'
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
@@ -145,7 +146,7 @@ function etiquetaUbicacion(cita) {
   return cita.seccion || 'Ubicación no disponible'
 }
 
-export default function ChatProyecto({ proyecto, sesion, onVolver }) {
+export default function ChatProyecto({ proyecto, sesion, onVolver, estadoRag }) {
   const token = sesion?.token
   const base = `/proyectos/${proyecto.id}`
   const [conversaciones, setConversaciones] = useState([])
@@ -175,6 +176,7 @@ export default function ChatProyecto({ proyecto, sesion, onVolver }) {
   const [documentoSubidoAviso, setDocumentoSubidoAviso] = useState(null)
   const finMensajesRef = useRef(null)
   const inputArchivoRef = useRef(null)
+  const ragListo = estadoRag?.estado === 'listo'
 
   const cargarLista = useCallback(async (archivadas, numeroPagina = 1) => {
     const datos = await pedirChat(
@@ -311,7 +313,7 @@ export default function ChatProyecto({ proyecto, sesion, onVolver }) {
   const handleEnviar = async (evento) => {
     evento.preventDefault()
     const texto = pregunta.trim()
-    if (!texto || ocupado || mostrarArchivadas) return
+    if (!texto || ocupado || mostrarArchivadas || !ragListo) return
     setOcupado(true)
     setError('')
     let id = conversacionActivaId
@@ -337,7 +339,7 @@ export default function ChatProyecto({ proyecto, sesion, onVolver }) {
   }
 
   const handleReintentar = async (mensajeId) => {
-    if (!conversacionActivaId || ocupado) return
+    if (!conversacionActivaId || ocupado || !ragListo) return
     setOcupado(true)
     setError('')
     try {
@@ -352,7 +354,7 @@ export default function ChatProyecto({ proyecto, sesion, onVolver }) {
 
   const handleComparar = async (evento) => {
     evento.preventDefault()
-    if (!origenId || !destinoId || origenId === destinoId || ocupado || mostrarArchivadas) return
+    if (!origenId || !destinoId || origenId === destinoId || ocupado || mostrarArchivadas || !ragListo) return
     const origen = versiones.find((version) => version.version_id === Number(origenId))
     const destino = versiones.find((version) => version.version_id === Number(destinoId))
     if (!origen || !destino) return
@@ -526,12 +528,13 @@ export default function ChatProyecto({ proyecto, sesion, onVolver }) {
         </aside>
 
         <main className="chat-proyecto__central">
+          <EstadoRag estado={estadoRag?.estado} mensaje={estadoRag?.mensaje} onReintentar={estadoRag?.refrescar} />
           <div className="chat-proyecto__banner">
             <IconDocMini />
             <span>{documentoIds.length ? `${documentoIds.length} fuente${documentoIds.length === 1 ? '' : 's'} seleccionada${documentoIds.length === 1 ? '' : 's'}` : `Todas las fuentes vigentes de ${proyecto.nombre}`}</span>
             <div className="chat-proyecto__banner-acciones">
               <button type="button" className={herramienta === 'fuentes' ? 'activo' : ''} onClick={() => setHerramienta(herramienta === 'fuentes' ? null : 'fuentes')}>Fuentes</button>
-              <button type="button" className={herramienta === 'comparar' ? 'activo' : ''} onClick={() => setHerramienta(herramienta === 'comparar' ? null : 'comparar')}>Comparar</button>
+              <button type="button" className={herramienta === 'comparar' ? 'activo' : ''} disabled={!ragListo} onClick={() => setHerramienta(herramienta === 'comparar' ? null : 'comparar')}>Comparar</button>
             </div>
           </div>
 
@@ -573,7 +576,7 @@ export default function ChatProyecto({ proyecto, sesion, onVolver }) {
                   <input value={seccion} onChange={(evento) => setSeccion(evento.target.value)} maxLength={255} placeholder="Ej.: Ingresos" />
                 </label>
               </div>
-              <button type="submit" className="chat-proyecto__boton-primario" disabled={ocupado || !origenId || !destinoId || origenId === destinoId || mostrarArchivadas}>Comparar</button>
+              <button type="submit" className="chat-proyecto__boton-primario" disabled={!ragListo || ocupado || !origenId || !destinoId || origenId === destinoId || mostrarArchivadas}>Comparar</button>
             </form>
           )}
 
@@ -608,7 +611,7 @@ export default function ChatProyecto({ proyecto, sesion, onVolver }) {
                   {mensaje.estado === 'fallido' && (
                     <div className="chat-proyecto__mensaje-fallido">
                       No se pudo completar esta {mensaje.tipo === 'comparacion' ? 'comparación' : 'respuesta'}.
-                      {mensaje.tipo === 'chat' && <button type="button" disabled={ocupado} onClick={() => handleReintentar(mensaje.id)}>Reintentar</button>}
+                      {mensaje.tipo === 'chat' && <button type="button" disabled={ocupado || !ragListo} onClick={() => handleReintentar(mensaje.id)}>Reintentar</button>}
                     </div>
                   )}
                 </div>
@@ -641,13 +644,13 @@ export default function ChatProyecto({ proyecto, sesion, onVolver }) {
 
           <form className="chat-proyecto__form" onSubmit={handleEnviar}>
             <button type="button" className="chat-proyecto__adjuntar" onClick={handleAdjuntarClick}
-              disabled={ocupado || mostrarArchivadas || subiendoDocumento} aria-label="Adjuntar documento">
+              disabled={!ragListo || ocupado || mostrarArchivadas || subiendoDocumento} aria-label="Adjuntar documento">
               <IconClip />
             </button>
-            <input type="text" placeholder={mostrarArchivadas ? 'Restaura la conversación para continuar' : 'Pregunta algo sobre las fuentes del proyecto...'}
+            <input type="text" placeholder={!ragListo ? 'Preparando el asistente documental...' : mostrarArchivadas ? 'Restaura la conversación para continuar' : 'Pregunta algo sobre las fuentes del proyecto...'}
               value={pregunta} onChange={(evento) => setPregunta(evento.target.value)} maxLength={2000}
-              disabled={ocupado || mostrarArchivadas} />
-            <button type="submit" disabled={ocupado || mostrarArchivadas || !pregunta.trim()} aria-label="Enviar pregunta"><IconEnviar /></button>
+              disabled={!ragListo || ocupado || mostrarArchivadas} />
+            <button type="submit" disabled={!ragListo || ocupado || mostrarArchivadas || !pregunta.trim()} aria-label="Enviar pregunta"><IconEnviar /></button>
           </form>
           <input
             ref={inputArchivoRef}
