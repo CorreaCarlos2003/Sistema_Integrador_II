@@ -2,9 +2,16 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { getInitials, getAvatarColors } from '../../../utils/avatarUtils'
 import { actorHeaders } from '../../../utils/actor'
 import ProyectoAccionesMenu from './ProyectoAccionesMenu'
+import DocumentoPendienteModal from './DocumentoPendienteModal'
+import DocumentosPorAprobarModal from './DocumentosPorAprobarModal'
+import SubirDocumentoInfoModal from './SubirDocumentoInfoModal'
+import ConfirmarEliminarModal from './ConfirmarEliminarModal'
+import DocumentoEliminadoModal from './DocumentoEliminadoModal'
 import './ProyectoDetalle.css'
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
+const EXTENSIONES_PERMITIDAS = ['.docx', '.pdf', '.xlsx', '.pptx', '.txt', '.md']
+const TAMANO_MAXIMO_BYTES = 30 * 1024 * 1024 // 30MB
 
 const IconVolver = (p) => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" {...p}>
@@ -65,6 +72,13 @@ const IconEliminar = (p) => (
   </svg>
 )
 
+const IconRelojMini = (p) => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3.5 2" />
+  </svg>
+)
+
 function formatFecha(fechaStr) {
   if (!fechaStr) return ''
   // Las fechas "solo día" (YYYY-MM-DD, ej. fecha_fin) se parsean en UTC
@@ -79,7 +93,7 @@ function formatFecha(fechaStr) {
   return new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short', year: 'numeric' }).format(fecha)
 }
 
-export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onArchivar, onEliminar, onActividad }) {
+export default function ProyectoDetalle({ proyecto, sesion, onVolver, onIniciarChat, onArchivar, onEliminar, onActividad }) {
   const [tab, setTab] = useState('documentos')
   const [busqueda, setBusqueda] = useState('')
 
@@ -87,10 +101,35 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
   const [cargandoDocumentos, setCargandoDocumentos] = useState(true)
   const [errorDocumentos, setErrorDocumentos] = useState(null)
   const [subiendo, setSubiendo] = useState(false)
+  const [mostrarInfoSubida, setMostrarInfoSubida] = useState(false)
   const inputArchivoRef = useRef(null)
+  const [documentoPendienteAviso, setDocumentoPendienteAviso] = useState(null)
+  const [mostrarAprobacion, setMostrarAprobacion] = useState(false)
+  const [pendientesCount, setPendientesCount] = useState(0)
+  const [documentoAEliminar, setDocumentoAEliminar] = useState(null)
+  const [eliminandoDocumento, setEliminandoDocumento] = useState(false)
+  const [documentoEliminadoAviso, setDocumentoEliminadoAviso] = useState(false)
 
   const estado = proyecto.archivado ? 'archivado' : (proyecto.estado || '').toLowerCase()
   const miembros = proyecto.miembros || []
+  const puedeEliminarDocumentos = sesion?.rol === 'Administrador' || sesion?.rol === 'Jefe de Proyecto'
+  const esResponsableDeEsteProyecto = (proyecto.responsables || []).some((r) => r.id === sesion?.id)
+  const puedeAprobarDocumentos =
+    sesion?.rol === 'Administrador' || (sesion?.rol === 'Jefe de Proyecto' && esResponsableDeEsteProyecto)
+
+  const fetchPendientesCount = async () => {
+    if (!puedeAprobarDocumentos) return
+    try {
+      const respuesta = await fetch(`${API_BASE_URL}/proyectos/${proyecto.id}/documentos/pendientes`, {
+        headers: { ...actorHeaders() },
+      })
+      if (!respuesta.ok) return
+      const data = await respuesta.json()
+      setPendientesCount(data.length)
+    } catch {
+      // El contador es informativo; si falla, simplemente no se actualiza.
+    }
+  }
 
   const fetchDocumentos = async () => {
     setCargandoDocumentos(true)
@@ -110,6 +149,7 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
 
   useEffect(() => {
     fetchDocumentos()
+    fetchPendientesCount()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proyecto.id])
 
@@ -117,12 +157,29 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
     return documentos.filter((doc) => doc.nombre.toLowerCase().includes(busqueda.toLowerCase()))
   }, [documentos, busqueda])
 
-  const handleSubirClick = () => inputArchivoRef.current?.click()
+  const handleSubirClick = () => setMostrarInfoSubida(true)
+
+  const handleContinuarSubida = () => {
+    setMostrarInfoSubida(false)
+    inputArchivoRef.current?.click()
+  }
 
   const handleArchivoSeleccionado = async (e) => {
     const archivo = e.target.files?.[0]
     e.target.value = ''
     if (!archivo) return
+
+    const extension = `.${archivo.name.split('.').pop()?.toLowerCase() || ''}`
+    if (!EXTENSIONES_PERMITIDAS.includes(extension)) {
+      setErrorDocumentos(
+        'Solo se admiten documentos Word (.docx), PDF, Excel (.xlsx), PowerPoint (.pptx), Bloc de notas (.txt) o Markdown (.md).',
+      )
+      return
+    }
+    if (archivo.size > TAMANO_MAXIMO_BYTES) {
+      setErrorDocumentos('El archivo supera el límite de 30MB permitido.')
+      return
+    }
 
     setSubiendo(true)
     setErrorDocumentos(null)
@@ -141,7 +198,11 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
         throw new Error(detalle?.detail || 'No se pudo subir el documento')
       }
 
+      const documentoSubido = await response.json()
       await fetchDocumentos()
+      if (documentoSubido.estado_aprobacion === 'PENDIENTE') {
+        setDocumentoPendienteAviso(documentoSubido.nombre)
+      }
       onActividad?.()
     } catch (err) {
       setErrorDocumentos(err.message)
@@ -150,16 +211,37 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
     }
   }
 
+  const handlePedirEliminarDocumento = (documento) => {
+    if (!puedeEliminarDocumentos) return
+    setDocumentoAEliminar(documento)
+  }
+
+  const handleConfirmarEliminarDocumento = async () => {
+    if (!documentoAEliminar) return
+    const exito = await handleEliminarDocumento(documentoAEliminar.id)
+    setDocumentoAEliminar(null)
+    if (exito) setDocumentoEliminadoAviso(true)
+  }
+
   const handleEliminarDocumento = async (idDocumento) => {
+    if (!puedeEliminarDocumentos) return false
+    setEliminandoDocumento(true)
     try {
       const response = await fetch(`${API_BASE_URL}/proyectos/${proyecto.id}/documentos/${idDocumento}`, {
         method: 'DELETE',
         headers: { ...actorHeaders() },
       })
-      if (!response.ok) throw new Error('No se pudo eliminar el documento')
+      if (!response.ok) {
+        const detalle = await response.json().catch(() => null)
+        throw new Error(detalle?.detail || 'No se pudo eliminar el documento')
+      }
       setDocumentos((prev) => prev.filter((doc) => doc.id !== idDocumento))
+      return true
     } catch (err) {
       setErrorDocumentos(err.message)
+      return false
+    } finally {
+      setEliminandoDocumento(false)
     }
   }
 
@@ -258,10 +340,28 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
         <input
           ref={inputArchivoRef}
           type="file"
-          accept=".docx"
+          accept=".docx,.pdf,.xlsx,.pptx,.txt,.md"
           style={{ display: 'none' }}
           onChange={handleArchivoSeleccionado}
         />
+
+        {puedeAprobarDocumentos && (
+          <button
+            type="button"
+            className="proyecto-detalle__accion"
+            onClick={() => setMostrarAprobacion(true)}
+          >
+            <span className="proyecto-detalle__accion-info">
+              <span className="proyecto-detalle__accion-icono">
+                <IconRelojMini />
+              </span>
+              <span className="proyecto-detalle__accion-titulo">Documentos por Aprobar</span>
+            </span>
+            <span className="proyecto-detalle__accion-btn">
+              {pendientesCount > 0 ? `${pendientesCount} pendiente${pendientesCount === 1 ? '' : 's'}` : 'Ver'}
+            </span>
+          </button>
+        )}
       </div>
 
       <nav className="proyecto-detalle__tabs">
@@ -307,7 +407,7 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
               <div>FRAGMENTOS INDEXADOS</div>
               <div>ESTADO</div>
               <div>FECHA DE SUBIDA</div>
-              <div className="proyecto-detalle__col-comandos">COMANDOS</div>
+              <div className="proyecto-detalle__col-comandos">OPCIONES</div>
             </div>
 
             {cargandoDocumentos ? (
@@ -333,10 +433,17 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
                   </div>
 
                   <div>
-                    <span className="proyecto-detalle__estado-ocr">
-                      <span className="proyecto-detalle__estado-ocr-dot" />
-                      INDEXADO
-                    </span>
+                    {doc.estado_aprobacion === 'PENDIENTE' ? (
+                      <span className="proyecto-detalle__estado-ocr proyecto-detalle__estado-ocr--pendiente">
+                        <span className="proyecto-detalle__estado-ocr-dot" />
+                        PENDIENTE
+                      </span>
+                    ) : (
+                      <span className="proyecto-detalle__estado-ocr">
+                        <span className="proyecto-detalle__estado-ocr-dot" />
+                        INDEXADO
+                      </span>
+                    )}
                   </div>
 
                   <div className="proyecto-detalle__col-autor">
@@ -344,14 +451,16 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
                   </div>
 
                   <div className="proyecto-detalle__col-comandos">
-                    <button
-                      type="button"
-                      className="proyecto-detalle__btn-icono"
-                      title="Eliminar"
-                      onClick={() => handleEliminarDocumento(doc.id)}
-                    >
-                      <IconEliminar />
-                    </button>
+                    {puedeEliminarDocumentos && (
+                      <button
+                        type="button"
+                        className="proyecto-detalle__btn-icono"
+                        title="Eliminar"
+                        onClick={() => handlePedirEliminarDocumento(doc)}
+                      >
+                        <IconEliminar />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))
@@ -385,6 +494,40 @@ export default function ProyectoDetalle({ proyecto, onVolver, onIniciarChat, onA
             })
           )}
         </div>
+      )}
+
+      <SubirDocumentoInfoModal
+        visible={mostrarInfoSubida}
+        onCerrar={() => setMostrarInfoSubida(false)}
+        onContinuar={handleContinuarSubida}
+      />
+
+      <DocumentoPendienteModal
+        nombreDocumento={documentoPendienteAviso}
+        onCerrar={() => setDocumentoPendienteAviso(null)}
+      />
+
+      <ConfirmarEliminarModal
+        nombreDocumento={documentoAEliminar?.nombre}
+        eliminando={eliminandoDocumento}
+        onCancelar={() => setDocumentoAEliminar(null)}
+        onConfirmar={handleConfirmarEliminarDocumento}
+      />
+
+      <DocumentoEliminadoModal
+        visible={documentoEliminadoAviso}
+        onCerrar={() => setDocumentoEliminadoAviso(false)}
+      />
+
+      {mostrarAprobacion && (
+        <DocumentosPorAprobarModal
+          proyectoId={proyecto.id}
+          onCerrar={() => setMostrarAprobacion(false)}
+          onCambio={() => {
+            fetchDocumentos()
+            fetchPendientesCount()
+          }}
+        />
       )}
     </div>
   )

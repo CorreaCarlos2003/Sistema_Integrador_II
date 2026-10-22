@@ -30,13 +30,14 @@ def listar_proyectos_cards(
     busqueda: Optional[str] = Query(None, description="Buscar por nombre o descripción"),
     estado: Optional[str] = Query(None, description="Filtrar por estado (Activo, Pausado, etc.)"),
     responsable_id: Optional[int] = Query(None, description="Filtrar por usuario responsable"),
+    miembro_id: Optional[int] = Query(None, description="Filtrar por usuario asignado como miembro"),
     orden: Literal["recientes", "antiguos", "az", "za"] = Query("recientes", description="Orden de los resultados"),
     page: int = Query(1, ge=1, description="Número de página"),
     limit: int = Query(6, ge=1, le=50, description="Cantidad de tarjetas por página"),
     db: Session = Depends(get_db),
 ):
     return ProyectoService(db).listar_cards_proyectos(
-        busqueda=busqueda, estado=estado, responsable_id=responsable_id,
+        busqueda=busqueda, estado=estado, responsable_id=responsable_id, miembro_id=miembro_id,
         orden=orden, page=page, limit=limit,
     )
 

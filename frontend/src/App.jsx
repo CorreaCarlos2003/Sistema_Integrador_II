@@ -3,6 +3,7 @@ import Login from "./pages/Login/Login";
 import AdminLayout from "./pages/Admin/AdminLayout";
 import { obtenerSeccionesPermitidas } from "./pages/Admin/secciones";
 import Dashboard from "./pages/Admin/Dashboard";
+import InicioUsuario from "./pages/Usuario/InicioUsuario";
 import Usuarios from "./pages/Admin/Usuarios";
 import RolesPermisos from "./pages/Admin/RolesPermisos";
 import Historial from "./pages/Admin/Historial";
@@ -77,7 +78,11 @@ function App() {
       onCerrarSesion={cerrarSesion}
     >
       {seccionActiva === "inicio" ? (
-        <Dashboard sesion={sesion} />
+        sesion.rol === "Administrador" ? (
+          <Dashboard sesion={sesion} />
+        ) : (
+          <InicioUsuario sesion={sesion} />
+        )
       ) : seccionActiva === "proyectos" ? (
         <Proyectos sesion={sesion} />
       ) : seccionActiva === "usuarios" ? (

@@ -216,6 +216,7 @@ class ReportesService:
                 EventoAuditoria.fecha >= inicio,
                 EventoAuditoria.fecha <= fin,
                 EventoAuditoria.usuario_id.isnot(None),
+                EventoAuditoria.proyecto_id.isnot(None),
             )
             .group_by(EventoAuditoria.usuario_id, EventoAuditoria.proyecto_id)
             .order_by(func.count(EventoAuditoria.id).desc())

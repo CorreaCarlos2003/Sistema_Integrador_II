@@ -1,6 +1,6 @@
 import ProyectoCard from './ProyectoCard'
 
-export default function ProyectoGrid({ proyectos, onSeleccionarProyecto, onArchivarProyecto, onEliminarProyecto }) {
+export default function ProyectoGrid({ proyectos, sesion, onSeleccionarProyecto, onArchivarProyecto, onEliminarProyecto }) {
   if (!proyectos || proyectos.length === 0) {
     return (
       <div className="proyectos-vacio">
@@ -15,6 +15,7 @@ export default function ProyectoGrid({ proyectos, onSeleccionarProyecto, onArchi
         <ProyectoCard
           key={proyecto.id}
           proyecto={proyecto}
+          sesion={sesion}
           onSeleccionar={onSeleccionarProyecto}
           onArchivar={onArchivarProyecto}
           onEliminar={onEliminarProyecto}

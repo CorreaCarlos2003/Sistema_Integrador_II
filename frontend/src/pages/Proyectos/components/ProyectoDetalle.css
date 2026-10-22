@@ -542,6 +542,15 @@
   background: #156965;
 }
 
+.proyecto-detalle__estado-ocr--pendiente {
+  background: rgba(180, 83, 9, 0.12);
+  color: #b45309;
+}
+
+.proyecto-detalle__estado-ocr--pendiente .proyecto-detalle__estado-ocr-dot {
+  background: #b45309;
+}
+
 .proyecto-detalle__progreso {
   display: flex;
   flex-direction: column;

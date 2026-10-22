@@ -5,11 +5,16 @@ python-jose[cryptography]
 pydantic[email]
 sqlalchemy>=2.0.0
 python-docx
+pypdf
+openpyxl
+python-pptx
 langchain-core
 langchain-text-splitters
 langchain-chroma
 langchain-huggingface
 langchain-groq
+langchain-google-genai
+langchain-openai
 chromadb
 sentence-transformers
 python-multipart

@@ -6,6 +6,7 @@ export default function ProyectosHeader({
   responsables,
   filtroResponsable,
   onCambioFiltroResponsable,
+  ocultarFiltroResponsable,
   orden,
   onCambioOrden,
   vista,
@@ -58,21 +59,23 @@ export default function ProyectosHeader({
           </label>
         </div>
 
-        <div className="proyectos-header__select-group">
-          <label className="proyectos-header__select-label">
-            Responsable: 
-            <select
-              className="proyectos-header__select-inline"
-              value={filtroResponsable}
-              onChange={(e) => onCambioFiltroResponsable(e.target.value)}
-            >
-              <option value="Todos">Todos</option>
-              {responsables.map((r) => (
-                <option key={r.id} value={r.id}>{r.nombre}</option>
-              ))}
-            </select>
-          </label>
-        </div>
+        {!ocultarFiltroResponsable && (
+          <div className="proyectos-header__select-group">
+            <label className="proyectos-header__select-label">
+              Responsable:
+              <select
+                className="proyectos-header__select-inline"
+                value={filtroResponsable}
+                onChange={(e) => onCambioFiltroResponsable(e.target.value)}
+              >
+                <option value="Todos">Todos</option>
+                {responsables.map((r) => (
+                  <option key={r.id} value={r.id}>{r.nombre}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
 
         <div className="proyectos-header__select-group proyectos-header__select-group--orden">
           <label className="proyectos-header__select-label">

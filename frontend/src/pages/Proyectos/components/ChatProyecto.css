@@ -744,6 +744,17 @@
   cursor: not-allowed;
 }
 
+.chat-proyecto__adjuntar {
+  background: #f1efe9;
+  color: #4f4f49;
+  box-shadow: none;
+  border: 1px solid rgba(24, 24, 22, 0.09);
+}
+
+.chat-proyecto__adjuntar:hover:not(:disabled) {
+  background: #e7e4db;
+}
+
 @media (max-width: 860px) {
   .chat-proyecto__layout {
     flex-direction: column;

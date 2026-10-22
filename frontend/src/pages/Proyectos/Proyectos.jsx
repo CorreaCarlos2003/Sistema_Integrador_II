@@ -7,6 +7,8 @@ import ProyectoDetalle from './components/ProyectoDetalle'
 import ChatProyecto from './components/ChatProyecto'
 import ModalNuevoProyecto from './components/ModalNuevoProyecto'
 import ConfirmarEliminarProyecto from './components/ConfirmarEliminarProyecto'
+import ProyectoEliminadoExito from './components/ProyectoEliminadoExito'
+import ProyectoInhabilitadoModal from './components/ProyectoInhabilitadoModal'
 import './Proyectos.css'
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
@@ -33,9 +35,15 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
 
   // Solo el Administrador del sistema puede archivar/reactivar y eliminar proyectos
   const esAdministrador = sesion?.rol === 'Administrador'
+  // Un Jefe de Proyecto solo debe ver los proyectos donde es Responsable; el Administrador ve todos
+  const esJefeDeProyecto = sesion?.rol === 'Jefe de Proyecto'
+  // Un Colaborador solo debe ver los proyectos a los que fue asignado (invitación aceptada)
+  const esColaborador = sesion?.rol === 'Colaborador'
   const [accionError, setAccionError] = useState(null)
   const [proyectoAEliminar, setProyectoAEliminar] = useState(null)
   const [eliminando, setEliminando] = useState(false)
+  const [proyectoEliminadoNombre, setProyectoEliminadoNombre] = useState(null)
+  const [proyectoInhabilitadoAviso, setProyectoInhabilitadoAviso] = useState(null)
 
   const fetchProyectos = useCallback(async () => {
     setLoading(true)
@@ -49,7 +57,16 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
       })
       if (busqueda) params.append('busqueda', busqueda)
       if (filtroEstado && filtroEstado !== 'Todos') params.append('estado', filtroEstado)
-      if (filtroResponsable && filtroResponsable !== 'Todos') params.append('responsable_id', filtroResponsable)
+
+      if (esJefeDeProyecto) {
+        // Restricción forzada: un Jefe de Proyecto solo puede ver los proyectos donde es Responsable.
+        if (sesion?.id) params.append('responsable_id', sesion.id)
+      } else if (esColaborador) {
+        // Restricción forzada: un Colaborador solo puede ver los proyectos donde fue asignado.
+        if (sesion?.id) params.append('miembro_id', sesion.id)
+      } else if (filtroResponsable && filtroResponsable !== 'Todos') {
+        params.append('responsable_id', filtroResponsable)
+      }
 
       const response = await fetch(`http://127.0.0.1:8000/proyectos/detalles?${params.toString()}`)
       if (!response.ok) {
@@ -66,7 +83,7 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
     } finally {
       setLoading(false)
     }
-  }, [busqueda, filtroEstado, filtroResponsable, orden, page, limit])
+  }, [busqueda, filtroEstado, filtroResponsable, orden, page, limit, sesion?.id, sesion?.rol])
 
   // Si falla, el filtro de responsables solo muestra "Todos".
   const fetchResponsables = () =>
@@ -89,7 +106,17 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
     return () => clearTimeout(timer)
   }, [fetchProyectos])
 
+  const estaInhabilitadoParaMi = (proyecto) => {
+    if (!sesion?.id) return false
+    const miembro = (proyecto.miembros || []).find((m) => m.id === sesion.id)
+    return miembro?.activo === false
+  }
+
   const seleccionarProyecto = (proyecto) => {
+    if (estaInhabilitadoParaMi(proyecto)) {
+      setProyectoInhabilitadoAviso(proyecto)
+      return
+    }
     setProyectoSeleccionado(proyecto)
     setVistaProyecto('detalle')
     onSeleccionarProyecto?.(proyecto)
@@ -140,6 +167,7 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
       if (proyectoSeleccionado?.id === proyectoAEliminar.id) {
         setProyectoSeleccionado(null)
       }
+      setProyectoEliminadoNombre(proyectoAEliminar.nombre)
       setProyectoAEliminar(null)
       setPage(1)
       fetchProyectos()
@@ -240,6 +268,7 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
         {accionError && <div className="proyectos-error">Error: {accionError}</div>}
         <ProyectoDetalle
           proyecto={proyectoSeleccionado}
+          sesion={sesion}
           onVolver={volverAProyectos}
           onIniciarChat={() => setVistaProyecto('chat')}
           onArchivar={esAdministrador ? archivarProyecto : undefined}
@@ -251,6 +280,10 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
           onCancelar={() => setProyectoAEliminar(null)}
           onConfirmar={confirmarEliminarProyecto}
           loading={eliminando}
+        />
+        <ProyectoEliminadoExito
+          nombreProyecto={proyectoEliminadoNombre}
+          onCerrar={() => setProyectoEliminadoNombre(null)}
         />
       </>
     )
@@ -267,6 +300,7 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
         responsables={responsables}
         filtroResponsable={filtroResponsable}
         onCambioFiltroResponsable={(val) => { setFiltroResponsable(val); setPage(1); }}
+        ocultarFiltroResponsable={esJefeDeProyecto || esColaborador}
         orden={orden}
         onCambioOrden={(val) => { setOrden(val); setPage(1); }}
         vista={vista}
@@ -284,6 +318,7 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
           vista === 'cards' ? (
             <ProyectoGrid
               proyectos={proyectos}
+              sesion={sesion}
               onSeleccionarProyecto={seleccionarProyecto}
               onArchivarProyecto={esAdministrador ? archivarProyecto : undefined}
               onEliminarProyecto={esAdministrador ? pedirEliminarProyecto : undefined}
@@ -291,6 +326,7 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
           ) : (
             <ProyectoTable
               proyectos={proyectos}
+              sesion={sesion}
               onSeleccionarProyecto={seleccionarProyecto}
               onArchivarProyecto={esAdministrador ? archivarProyecto : undefined}
               onEliminarProyecto={esAdministrador ? pedirEliminarProyecto : undefined}
@@ -317,6 +353,14 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
         onCancelar={() => setProyectoAEliminar(null)}
         onConfirmar={confirmarEliminarProyecto}
         loading={eliminando}
+      />
+      <ProyectoEliminadoExito
+        nombreProyecto={proyectoEliminadoNombre}
+        onCerrar={() => setProyectoEliminadoNombre(null)}
+      />
+      <ProyectoInhabilitadoModal
+        proyecto={proyectoInhabilitadoAviso}
+        onCerrar={() => setProyectoInhabilitadoAviso(null)}
       />
     </div>
   )

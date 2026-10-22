@@ -1,7 +1,7 @@
 import { getInitials, getAvatarColors } from '../../../utils/avatarUtils'
 import ProyectoAccionesMenu from './ProyectoAccionesMenu'
 
-export default function ProyectoTable({ proyectos, onSeleccionarProyecto, onArchivarProyecto, onEliminarProyecto }) {
+export default function ProyectoTable({ proyectos, sesion, onSeleccionarProyecto, onArchivarProyecto, onEliminarProyecto }) {
   if (!proyectos || proyectos.length === 0) {
     return (
       <div className="proyectos-vacio">
@@ -52,8 +52,11 @@ export default function ProyectoTable({ proyectos, onSeleccionarProyecto, onArch
               return 'proyecto-card__badge--default'
             }
 
+            const miembroActual = (proyecto.miembros || []).find((m) => m.id === sesion?.id)
+            const inhabilitado = miembroActual?.activo === false
+
             return (
-              <tr key={proyecto.id}>
+              <tr key={proyecto.id} className={inhabilitado ? 'proyectos-tabla__fila--inhabilitada' : ''}>
                 <td className="proyectos-tabla__codigo">{proyecto.codigo || '#PRJ-000'}</td>
                 
                 <td>
@@ -88,10 +91,15 @@ export default function ProyectoTable({ proyectos, onSeleccionarProyecto, onArch
                 </td>
 
                 <td>
-                  <span className={`proyecto-card__badge ${getBadgeClass()}`}>
-                    <span className="proyecto-card__badge-dot"></span>
-                    {proyecto.archivado ? 'ARCHIVADO' : proyecto.estado?.toUpperCase()}
-                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span className={`proyecto-card__badge ${getBadgeClass()}`}>
+                      <span className="proyecto-card__badge-dot"></span>
+                      {proyecto.archivado ? 'ARCHIVADO' : proyecto.estado?.toUpperCase()}
+                    </span>
+                    {inhabilitado && (
+                      <span className="proyecto-card__aviso-inhabilitado">Acceso inhabilitado</span>
+                    )}
+                  </div>
                 </td>
 
                 <td>

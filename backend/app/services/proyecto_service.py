@@ -14,7 +14,11 @@ from app.schemas.proyecto import ProyectoCrear, ProyectoEditar, ProyectoEstado, 
     UsuarioResumen, ProyectoCardResponse, MiembroInvitar, InvitacionProyectoResponse, ResponsableOpcion
 from app.services import rag_service
 from app.services.auditoria_service import registrar_evento
-from app.services.mail_service import enviar_invitacion_proyecto
+from app.services.mail_service import (
+    enviar_eliminacion_miembro_proyecto,
+    enviar_inhabilitacion_miembro_proyecto,
+    enviar_invitacion_proyecto,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -217,8 +221,28 @@ class ProyectoService:
             )
 
         nombre_usuario = relacion.usuario.nombre if relacion.usuario else f"usuario {usuario_id}"
+        correo_usuario = relacion.usuario.correo if relacion.usuario else None
+        era_miembro_activo = relacion.estado_invitacion != "PENDIENTE"
+
         self.db.delete(relacion)
         self.db.commit()
+
+        if era_miembro_activo and correo_usuario:
+            actor = UsuarioRepository(self.db).obtener_por_id(actor_id) if actor_id else None
+            actor_nombre = actor.nombre if actor else "un administrador del sistema"
+            actor_rol = actor.rol if actor else "Administrador"
+            try:
+                enviar_eliminacion_miembro_proyecto(
+                    nombre=nombre_usuario,
+                    correo=correo_usuario,
+                    proyecto_nombre=proyecto.nombre,
+                    actor_nombre=actor_nombre,
+                    actor_rol=actor_rol,
+                )
+            except Exception:
+                logger.exception(
+                    "No se pudo enviar el correo de eliminación del proyecto a %s", correo_usuario
+                )
 
         registrar_evento(
             self.db,
@@ -257,7 +281,26 @@ class ProyectoService:
         self.db.commit()
 
         nombre_usuario = relacion.usuario.nombre if relacion.usuario else f"usuario {usuario_id}"
+        correo_usuario = relacion.usuario.correo if relacion.usuario else None
         detalle = "Usuario habilitado en el proyecto" if activo else "Usuario inhabilitado en el proyecto"
+
+        if not activo and correo_usuario:
+            actor = UsuarioRepository(self.db).obtener_por_id(actor_id) if actor_id else None
+            actor_nombre = actor.nombre if actor else "un administrador del sistema"
+            actor_rol = actor.rol if actor else "Administrador"
+            try:
+                enviar_inhabilitacion_miembro_proyecto(
+                    nombre=nombre_usuario,
+                    correo=correo_usuario,
+                    proyecto_nombre=proyecto.nombre,
+                    actor_nombre=actor_nombre,
+                    actor_rol=actor_rol,
+                )
+            except Exception:
+                logger.exception(
+                    "No se pudo enviar el correo de inhabilitación del proyecto a %s", correo_usuario
+                )
+
         registrar_evento(
             self.db,
             actor_id=actor_id,
@@ -375,13 +418,14 @@ class ProyectoService:
             busqueda: Optional[str] = None,
             estado: Optional[str] = None,
             responsable_id: Optional[int] = None,
+            miembro_id: Optional[int] = None,
             orden: str = "recientes",
             page: int = 1,
             limit: int = 6,
     ) -> PaginatedProyectosResponse:
         skip = (page - 1) * limit
         proyectos_db, total = self.repo.listar_cards(
-            busqueda=busqueda, estado=estado, responsable_id=responsable_id,
+            busqueda=busqueda, estado=estado, responsable_id=responsable_id, miembro_id=miembro_id,
             orden=orden, skip=skip, limit=limit,
         )
 

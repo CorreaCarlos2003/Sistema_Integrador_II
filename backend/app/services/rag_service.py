@@ -16,6 +16,9 @@ import shutil
 from docx import Document as WordDocument
 from docx.table import Table
 from docx.text.paragraph import Paragraph
+from openpyxl import load_workbook
+from pptx import Presentation
+from pypdf import PdfReader
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -67,7 +70,8 @@ def extraer_bloques_docx(ruta: str) -> list[tuple[str, str]]:
             parrafo = Paragraph(elemento, docx)
             texto = parrafo.text.strip()
             if texto:
-                bloques.append((texto, parrafo.style.name))
+                nombre_estilo = parrafo.style.name if parrafo.style is not None else "Normal"
+                bloques.append((texto, nombre_estilo))
         elif elemento.tag.endswith("}tbl"):
             tabla = Table(elemento, docx)
             for fila in tabla.rows:
@@ -90,12 +94,109 @@ def _cargar_docx(ruta: str, nombre: str | None = None) -> Document:
     )
 
 
-def indexar_documento(proyecto_id: int, ruta_archivo: str, nombre: str | None = None) -> int:
-    """Parte un .docx en chunks, los embebe y los guarda en la colección del proyecto.
+def _cargar_pdf(ruta: str, nombre: str | None = None) -> Document:
+    lector = PdfReader(ruta)
+    paginas = [(pagina.extract_text() or "").strip() for pagina in lector.pages]
+    contenido = "\n".join(texto for texto in paginas if texto)
 
+    return Document(
+        page_content=contenido,
+        metadata={
+            "source": ruta,
+            "nombre": nombre or os.path.basename(ruta),
+            "tipo": "pdf",
+        },
+    )
+
+
+def _cargar_excel(ruta: str, nombre: str | None = None) -> Document:
+    libro = load_workbook(ruta, data_only=True, read_only=True)
+    bloques = []
+    for hoja in libro.worksheets:
+        for fila in hoja.iter_rows(values_only=True):
+            celdas = [str(celda).strip() for celda in fila if celda is not None and str(celda).strip()]
+            if celdas:
+                bloques.append(" | ".join(celdas))
+    contenido = "\n".join(bloques)
+
+    return Document(
+        page_content=contenido,
+        metadata={
+            "source": ruta,
+            "nombre": nombre or os.path.basename(ruta),
+            "tipo": "xlsx",
+        },
+    )
+
+
+def _cargar_pptx(ruta: str, nombre: str | None = None) -> Document:
+    presentacion = Presentation(ruta)
+    bloques = []
+    for indice, diapositiva in enumerate(presentacion.slides, start=1):
+        textos = []
+        for forma in diapositiva.shapes:
+            if forma.has_text_frame:
+                texto = forma.text_frame.text.strip()
+                if texto:
+                    textos.append(texto)
+            if forma.has_table:
+                for fila in forma.table.rows:
+                    texto_fila = " | ".join(celda.text.strip() for celda in fila.cells)
+                    if texto_fila.strip(" |"):
+                        textos.append(texto_fila)
+        if textos:
+            bloques.append(f"[Diapositiva {indice}]\n" + "\n".join(textos))
+    contenido = "\n\n".join(bloques)
+
+    return Document(
+        page_content=contenido,
+        metadata={
+            "source": ruta,
+            "nombre": nombre or os.path.basename(ruta),
+            "tipo": "pptx",
+        },
+    )
+
+
+def _cargar_texto_plano(ruta: str, nombre: str | None = None, tipo: str = "txt") -> Document:
+    with open(ruta, "r", encoding="utf-8", errors="replace") as archivo:
+        contenido = archivo.read()
+
+    return Document(
+        page_content=contenido,
+        metadata={
+            "source": ruta,
+            "nombre": nombre or os.path.basename(ruta),
+            "tipo": tipo,
+        },
+    )
+
+
+_CARGADORES_POR_EXTENSION = {
+    ".docx": _cargar_docx,
+    ".pdf": _cargar_pdf,
+    ".xlsx": _cargar_excel,
+    ".pptx": _cargar_pptx,
+    ".txt": lambda ruta, nombre=None: _cargar_texto_plano(ruta, nombre, "txt"),
+    ".md": lambda ruta, nombre=None: _cargar_texto_plano(ruta, nombre, "md"),
+}
+
+
+def _cargar_documento(ruta: str, nombre: str | None = None) -> Document:
+    extension = os.path.splitext(nombre or ruta)[1].lower()
+    cargador = _CARGADORES_POR_EXTENSION.get(extension)
+    if cargador is None:
+        raise ValueError(f"Formato de archivo no soportado: {extension}")
+    return cargador(ruta, nombre)
+
+
+def indexar_documento(proyecto_id: int, ruta_archivo: str, nombre: str | None = None) -> int:
+    """Parte un documento en chunks, los embebe y los guarda en la colección del proyecto.
+
+    Soporta .docx, .pdf, .xlsx, .pptx, .txt y .md.
     Devuelve la cantidad de chunks indexados.
     """
-    documento = _cargar_docx(ruta_archivo, nombre)
+    documento = _cargar_documento(ruta_archivo, nombre)
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=RAG_CHUNK_SIZE,

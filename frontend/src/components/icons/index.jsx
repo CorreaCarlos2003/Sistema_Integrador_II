@@ -136,6 +136,13 @@ export const IconAlerta = (p) => (
   </svg>
 )
 
+export const IconReloj = (p) => (
+  <svg {...base} width={p.size ?? 20} height={p.size ?? 20} {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3.5 2" />
+  </svg>
+)
+
 /* Iconos del dashboard "DOC/AI" (Figma: Prototipo-Integrador-II, frame Dashboard) */
 
 export const IconCalendario = (p) => (

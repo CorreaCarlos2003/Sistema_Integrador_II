@@ -94,7 +94,7 @@ const IconAlerta = (p) => (
   </svg>
 )
 
-export default function Usuarios() {
+export default function Usuarios({ sesion }) {
   const [usuarios, setUsuarios] = useState([])
   const [cargando, setCargando] = useState(true)
   const [formulario, setFormulario] = useState(null)
@@ -107,6 +107,14 @@ export default function Usuarios() {
   const [invitarA, setInvitarA] = useState(null)
   const [proyectoSeleccionadoId, setProyectoSeleccionadoId] = useState(null)
   const [accionMiembro, setAccionMiembro] = useState(null)
+  const [menuMiembroAbiertoId, setMenuMiembroAbiertoId] = useState(null)
+  const [miembroEliminado, setMiembroEliminado] = useState(null)
+  const [usuarioAEliminar, setUsuarioAEliminar] = useState(null)
+  const [usuarioEliminado, setUsuarioEliminado] = useState(null)
+
+  const puedeEliminar = sesion?.rol === 'Administrador' || sesion?.rol === 'Jefe de Proyecto'
+  // Un Jefe de Proyecto solo puede gestionar los proyectos donde es Responsable; el Administrador ve todos
+  const esJefeDeProyecto = sesion?.rol === 'Jefe de Proyecto'
 
   const [tab, setTab] = useState('todos')
   const [busqueda, setBusqueda] = useState('')
@@ -121,7 +129,9 @@ export default function Usuarios() {
   }
 
   const cargarProyectos = async () => {
-    const respuesta = await pedir('/proyectos/detalles?limit=50')
+    const params = new URLSearchParams({ limit: '50' })
+    if (esJefeDeProyecto && sesion?.id) params.append('responsable_id', sesion.id)
+    const respuesta = await pedir(`/proyectos/detalles?${params.toString()}`)
     setProyectos(respuesta.items)
   }
 
@@ -133,6 +143,7 @@ export default function Usuarios() {
     cargarProyectos()
       .catch((err) => setError(err.message))
       .finally(() => setCargandoProyectos(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -252,11 +263,23 @@ export default function Usuarios() {
     }
   }
 
+  const confirmarEliminarUsuario = async () => {
+    setError('')
+    try {
+      await pedir(`/usuarios/${usuarioAEliminar.id}`, { method: 'DELETE' })
+      setUsuarioAEliminar(null)
+      await cargar()
+      setUsuarioEliminado(usuarioAEliminar)
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   const confirmarAccionMiembro = async () => {
     setError('')
     try {
       const { proyectoId, usuario, tipo } = accionMiembro
-      if (tipo === 'cancelar') {
+      if (tipo === 'cancelar' || tipo === 'eliminar') {
         await pedir(`/proyectos/${proyectoId}/usuarios/${usuario.id}`, { method: 'DELETE' })
       } else {
         await pedir(`/proyectos/${proyectoId}/usuarios/${usuario.id}/estado`, {
@@ -266,6 +289,9 @@ export default function Usuarios() {
       }
       setAccionMiembro(null)
       await cargarProyectos()
+      if (tipo === 'eliminar') {
+        setMiembroEliminado(usuario)
+      }
     } catch (err) {
       setError(err.message)
     }
@@ -460,19 +486,65 @@ export default function Usuarios() {
                               {pendiente ? 'Pendiente de aceptar' : formatFechaCorta(miembro.fecha_ingreso)}
                             </td>
                             <td className="usuarios__col-acciones">
-                              <button
-                                type="button"
-                                className="usuarios__btn-texto"
-                                onClick={() =>
-                                  setAccionMiembro({
-                                    proyectoId: proyectoActivo.id,
-                                    usuario: miembro,
-                                    tipo: pendiente ? 'cancelar' : inhabilitado ? 'habilitar' : 'inhabilitar',
-                                  })
-                                }
-                              >
-                                {pendiente ? 'Cancelar invitación' : inhabilitado ? 'Habilitar' : 'Inhabilitar'}
-                              </button>
+                              {puedeEliminar && !pendiente ? (
+                                <div className="usuarios__menu-wrap">
+                                  <button
+                                    type="button"
+                                    className="usuarios__btn-kebab"
+                                    aria-label="Acciones"
+                                    onClick={() =>
+                                      setMenuMiembroAbiertoId(menuMiembroAbiertoId === miembro.id ? null : miembro.id)
+                                    }
+                                  >
+                                    <IconPuntos />
+                                  </button>
+                                  {menuMiembroAbiertoId === miembro.id && (
+                                    <div className="usuarios__menu" onMouseLeave={() => setMenuMiembroAbiertoId(null)}>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setMenuMiembroAbiertoId(null)
+                                          setAccionMiembro({
+                                            proyectoId: proyectoActivo.id,
+                                            usuario: miembro,
+                                            tipo: inhabilitado ? 'habilitar' : 'inhabilitar',
+                                          })
+                                        }}
+                                      >
+                                        {inhabilitado ? 'Habilitar' : 'Inhabilitar'}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="usuarios__menu-peligro"
+                                        onClick={() => {
+                                          setMenuMiembroAbiertoId(null)
+                                          setAccionMiembro({
+                                            proyectoId: proyectoActivo.id,
+                                            usuario: miembro,
+                                            tipo: 'eliminar',
+                                          })
+                                        }}
+                                      >
+                                        Eliminar
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="usuarios__btn-texto"
+                                  onClick={() =>
+                                    setAccionMiembro({
+                                      proyectoId: proyectoActivo.id,
+                                      usuario: miembro,
+                                      tipo: pendiente ? 'cancelar' : inhabilitado ? 'habilitar' : 'inhabilitar',
+                                    })
+                                  }
+                                >
+                                  {pendiente ? 'Cancelar invitación' : inhabilitado ? 'Habilitar' : 'Inhabilitar'}
+                                </button>
+                              )}
                             </td>
                           </tr>
                         )
@@ -661,6 +733,18 @@ export default function Usuarios() {
                               >
                                 Editar
                               </button>
+                              {puedeEliminar && (
+                                <button
+                                  type="button"
+                                  className="usuarios__menu-peligro"
+                                  onClick={() => {
+                                    setMenuAbiertoId(null)
+                                    setUsuarioAEliminar(usuario)
+                                  }}
+                                >
+                                  Eliminar
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>
@@ -783,7 +867,9 @@ export default function Usuarios() {
                 ? 'Cancelar invitación'
                 : accionMiembro.tipo === 'habilitar'
                   ? 'Habilitar en el proyecto'
-                  : 'Inhabilitar en el proyecto'}
+                  : accionMiembro.tipo === 'eliminar'
+                    ? 'Eliminar del proyecto'
+                    : 'Inhabilitar en el proyecto'}
             </h2>
             <p className="usuarios__modal-texto">
               {accionMiembro.tipo === 'cancelar' ? (
@@ -794,6 +880,11 @@ export default function Usuarios() {
               ) : accionMiembro.tipo === 'habilitar' ? (
                 <>
                   <strong>{accionMiembro.usuario.nombre}</strong> podrá volver a interactuar con este proyecto.
+                </>
+              ) : accionMiembro.tipo === 'eliminar' ? (
+                <>
+                  <strong>{accionMiembro.usuario.nombre}</strong> será eliminado de este proyecto y ya no tendrá
+                  acceso a él. Esta acción no se puede deshacer.
                 </>
               ) : (
                 <>
@@ -815,7 +906,67 @@ export default function Usuarios() {
                   ? 'Cancelar invitación'
                   : accionMiembro.tipo === 'habilitar'
                     ? 'Habilitar'
-                    : 'Inhabilitar'}
+                    : accionMiembro.tipo === 'eliminar'
+                      ? 'Eliminar'
+                      : 'Inhabilitar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {miembroEliminado && (
+        <div className="usuarios__fondo" onClick={() => setMiembroEliminado(null)}>
+          <div className="usuarios__modal" onClick={(e) => e.stopPropagation()}>
+            <div className="usuarios__confirmacion-icono usuarios__confirmacion-icono--ok">
+              <IconCheck />
+            </div>
+            <h2>Usuario eliminado con éxito</h2>
+            <p className="usuarios__modal-texto">
+              <strong>{miembroEliminado.nombre}</strong> fue eliminado del proyecto correctamente.
+            </p>
+            <div className="usuarios__modal-acciones">
+              <button type="button" className="usuarios__btn-nuevo" onClick={() => setMiembroEliminado(null)}>
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {usuarioAEliminar && (
+        <div className="usuarios__fondo" onClick={() => setUsuarioAEliminar(null)}>
+          <div className="usuarios__modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Eliminar usuario</h2>
+            <p className="usuarios__modal-texto">
+              <strong>{usuarioAEliminar.nombre}</strong> será eliminado del sistema y ya no tendrá acceso a la
+              plataforma ni a ninguno de sus proyectos. Esta acción no se puede deshacer.
+            </p>
+            <div className="usuarios__modal-acciones">
+              <button type="button" className="usuarios__btn-texto" onClick={() => setUsuarioAEliminar(null)}>
+                Volver
+              </button>
+              <button type="button" className="usuarios__btn-peligro" onClick={confirmarEliminarUsuario}>
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {usuarioEliminado && (
+        <div className="usuarios__fondo" onClick={() => setUsuarioEliminado(null)}>
+          <div className="usuarios__modal" onClick={(e) => e.stopPropagation()}>
+            <div className="usuarios__confirmacion-icono usuarios__confirmacion-icono--ok">
+              <IconCheck />
+            </div>
+            <h2>Usuario eliminado con éxito</h2>
+            <p className="usuarios__modal-texto">
+              <strong>{usuarioEliminado.nombre}</strong> fue eliminado del sistema correctamente.
+            </p>
+            <div className="usuarios__modal-acciones">
+              <button type="button" className="usuarios__btn-nuevo" onClick={() => setUsuarioEliminado(null)}>
+                Entendido
               </button>
             </div>
           </div>

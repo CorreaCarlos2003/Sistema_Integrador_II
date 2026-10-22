@@ -16,8 +16,14 @@ RAG_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 RAG_CHUNK_SIZE = 1000
 RAG_CHUNK_OVERLAP = 200
 
-# Chat documental. Los valores pueden ajustarse según el plan de Groq.
+# Chat documental. Los valores pueden ajustarse según el plan de cada proveedor.
+# Groq es el proveedor principal; si se queda sin cupo (límite de tasa), se
+# intenta automáticamente con Gemini y luego con OpenRouter, en ese orden.
 GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
+# "openrouter/free" deja que OpenRouter elija automáticamente un modelo
+# gratuito disponible en ese momento (la lista de modelos :free cambia seguido).
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free")
 CHAT_RETRIEVAL_K = int(os.getenv("CHAT_RETRIEVAL_K", "5"))
 CHAT_MAX_DISTANCE = float(os.getenv("CHAT_MAX_DISTANCE", "1.3"))
 CHAT_HISTORY_TURNS = int(os.getenv("CHAT_HISTORY_TURNS", "8"))

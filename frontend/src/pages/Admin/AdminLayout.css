@@ -22,7 +22,8 @@
   --fuente-mono: 'Space Mono', monospace;
 
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background: var(--papel);
   color: var(--texto);
   font-family: var(--fuente-texto);
@@ -99,6 +100,7 @@
   gap: 4px;
   flex: 1;
   padding: 0 12px;
+  overflow-y: auto;
 }
 
 .panel__nav-item {
@@ -210,62 +212,10 @@
   border-bottom: 1px solid var(--borde);
 }
 
-.panel__filtro {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 36px;
-  padding: 0 13px;
-  background: var(--papel-tarjeta);
-  border: 1px solid var(--borde-fuerte);
-  border-radius: 4px;
-  color: var(--texto-nav);
-  cursor: pointer;
-}
-
-.panel__filtro-texto {
-  display: flex;
-  flex-direction: column;
-  font-family: var(--fuente-mono);
-  font-size: 12px;
-  letter-spacing: 1.2px;
-  line-height: 1.2;
-  text-align: center;
-  text-transform: uppercase;
-}
-
 .panel__topbar-acciones {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.panel__icono-boton {
-  position: relative;
-  width: 36px;
-  height: 36px;
-  border-radius: 4px;
-  border: 1px solid var(--borde-fuerte);
-  background: var(--papel-tarjeta);
-  color: var(--texto-nav);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.panel__icono-boton:hover {
-  background: var(--papel);
-}
-
-.panel__punto-alerta {
-  position: absolute;
-  bottom: 6px;
-  right: 6px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--teal);
 }
 
 .panel__cuenta {

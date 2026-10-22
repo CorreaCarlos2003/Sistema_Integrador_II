@@ -8,8 +8,6 @@ import {
   IconNavRoles,
   IconNavHistorial,
   IconNavReportes,
-  IconCalendario,
-  IconNotificacionLlena,
   IconUsuarioSilueta,
   IconPerfilFooter,
 } from '../../components/icons'
@@ -69,20 +67,7 @@ export default function AdminLayout({ activo, onNavegar, sesion, onCerrarSesion,
 
       <div className="panel__cuerpo">
         <header className="panel__topbar">
-          <button className="panel__filtro" type="button">
-            <IconCalendario />
-            <span className="panel__filtro-texto">
-              <small>Últimos 30</small>
-              <small>días</small>
-            </span>
-          </button>
-
           <div className="panel__topbar-acciones">
-            <button className="panel__icono-boton" type="button" title="Notificaciones" aria-label="Notificaciones">
-              <IconNotificacionLlena />
-              <span className="panel__punto-alerta" />
-            </button>
-
             <div className="panel__cuenta">
               <button
                 type="button"

@@ -42,6 +42,7 @@ class ProyectoRepository:
             busqueda: Optional[str] = None,
             estado: Optional[str] = None,
             responsable_id: Optional[int] = None,
+            miembro_id: Optional[int] = None,
             orden: str = "recientes",
             skip: int = 0,
             limit: int = 6,
@@ -65,6 +66,16 @@ class ProyectoRepository:
                 Proyecto.usuarios.any(
                     (UsuarioProyecto.usuario_id == responsable_id)
                     & (UsuarioProyecto.rol_proyecto == "RESPONSABLE")
+                )
+            )
+
+        # Filtro por membresía: proyectos donde el usuario fue asignado y aceptó la invitación
+        if miembro_id:
+            query = query.filter(
+                Proyecto.usuarios.any(
+                    (UsuarioProyecto.usuario_id == miembro_id)
+                    & (UsuarioProyecto.estado_invitacion == "ACEPTADA")
+                    & (UsuarioProyecto.activo.is_(True))
                 )
             )
 

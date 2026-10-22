@@ -1,0 +1,5 @@
+ALTER TABLE documentos
+    ADD COLUMN estado_aprobacion VARCHAR(20) NOT NULL DEFAULT 'APROBADO';
+
+ALTER TABLE documentos
+    ADD COLUMN subido_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL;

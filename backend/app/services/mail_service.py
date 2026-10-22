@@ -48,6 +48,73 @@ def enviar_invitacion_usuario(nombre: str, correo: str, contrasena: str, rol: st
     _enviar(correo, "Bienvenido a DocAI - Datos de acceso", texto, html)
 
 
+def enviar_eliminacion_miembro_proyecto(
+    nombre: str, correo: str, proyecto_nombre: str, actor_nombre: str, actor_rol: str
+) -> None:
+    texto = (
+        f"Hola {nombre},\n\n"
+        f"{actor_nombre} ({actor_rol}) te quitó del proyecto \"{proyecto_nombre}\" en DocAI.\n\n"
+        "Ya no formas parte de este proyecto y no tienes acceso a él.\n"
+        "Si consideras que esto es un error, comunícate con un administrador del sistema."
+    )
+
+    html = f"""
+    <div style="font-family: Arial, sans-serif; color: #2b2622; max-width: 480px;">
+      <h2 style="margin-bottom: 4px;">Fuiste eliminado de un proyecto</h2>
+      <p>Hola <strong>{nombre}</strong>, <strong>{actor_nombre}</strong> ({actor_rol}) te quitó del proyecto
+      <strong>{proyecto_nombre}</strong>.</p>
+      <p>Ya no formas parte de este proyecto y no tienes acceso a él.</p>
+      <p>Si consideras que esto es un error, comunícate con un administrador del sistema.</p>
+    </div>
+    """
+
+    _enviar(correo, f"Ya no formas parte del proyecto {proyecto_nombre}", texto, html)
+
+
+def enviar_inhabilitacion_miembro_proyecto(
+    nombre: str, correo: str, proyecto_nombre: str, actor_nombre: str, actor_rol: str
+) -> None:
+    texto = (
+        f"Hola {nombre},\n\n"
+        f"{actor_nombre} ({actor_rol}) te inhabilitó en el proyecto \"{proyecto_nombre}\" en DocAI.\n\n"
+        "Seguirás apareciendo en el proyecto, pero no podrás interactuar con él hasta que te vuelvan a habilitar.\n"
+        "Si consideras que esto es un error, comunícate con un administrador del sistema."
+    )
+
+    html = f"""
+    <div style="font-family: Arial, sans-serif; color: #2b2622; max-width: 480px;">
+      <h2 style="margin-bottom: 4px;">Fuiste inhabilitado en un proyecto</h2>
+      <p>Hola <strong>{nombre}</strong>, <strong>{actor_nombre}</strong> ({actor_rol}) te inhabilitó en el proyecto
+      <strong>{proyecto_nombre}</strong>.</p>
+      <p>Seguirás apareciendo en el proyecto, pero no podrás interactuar con él hasta que te vuelvan a habilitar.</p>
+      <p>Si consideras que esto es un error, comunícate con un administrador del sistema.</p>
+    </div>
+    """
+
+    _enviar(correo, f"Fuiste inhabilitado en el proyecto {proyecto_nombre}", texto, html)
+
+
+def enviar_eliminacion_usuario(nombre: str, correo: str, actor_nombre: str, actor_rol: str) -> None:
+    texto = (
+        f"Hola {nombre},\n\n"
+        f"Tu cuenta en DocAI fue eliminada por {actor_nombre} ({actor_rol}).\n\n"
+        "Ya no tienes acceso a la plataforma ni a los proyectos asociados a tu cuenta.\n"
+        "Si consideras que esto es un error, comunícate con un administrador del sistema."
+    )
+
+    html = f"""
+    <div style="font-family: Arial, sans-serif; color: #2b2622; max-width: 480px;">
+      <h2 style="margin-bottom: 4px;">Tu cuenta fue eliminada</h2>
+      <p>Hola <strong>{nombre}</strong>, tu cuenta en DocAI fue eliminada por <strong>{actor_nombre}</strong>
+      ({actor_rol}).</p>
+      <p>Ya no tienes acceso a la plataforma ni a los proyectos asociados a tu cuenta.</p>
+      <p>Si consideras que esto es un error, comunícate con un administrador del sistema.</p>
+    </div>
+    """
+
+    _enviar(correo, "Tu cuenta en DocAI fue eliminada", texto, html)
+
+
 def enviar_contrasena(nombre: str, correo: str, contrasena: str) -> None:
     texto = (
         f"Hola {nombre},\n\n"

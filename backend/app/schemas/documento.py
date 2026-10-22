@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -10,6 +10,19 @@ class DocumentoResponse(BaseModel):
     nombre: str
     chunks_indexados: int
     fecha_subida: datetime
+    estado_aprobacion: str
+
+    class Config:
+        from_attributes = True
+
+
+class DocumentoPendienteResponse(BaseModel):
+    id: int
+    proyecto_id: int
+    nombre: str
+    fecha_subida: datetime
+    subido_por: Optional[int] = None
+    subido_por_nombre: str
 
     class Config:
         from_attributes = True

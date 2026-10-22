@@ -10,7 +10,7 @@ from app.models.usuario import Usuario
 from app.repositories.usuario_repository import UsuarioRepository
 from app.schemas.usuario import UsuarioEditar, UsuarioEstado, UsuarioNuevo
 from app.services.auditoria_service import registrar_evento
-from app.services.mail_service import enviar_invitacion_usuario
+from app.services.mail_service import enviar_eliminacion_usuario, enviar_invitacion_usuario
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +120,21 @@ class UsuarioService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
 
         nombre, correo = usuario.nombre, usuario.correo
+        actor = self.repo.obtener_por_id(actor_id) if actor_id else None
+        actor_nombre = actor.nombre if actor else "un administrador del sistema"
+        actor_rol = actor.rol if actor else "Administrador"
+
         self.repo.eliminar(usuario)
+
+        try:
+            enviar_eliminacion_usuario(
+                nombre=nombre,
+                correo=correo,
+                actor_nombre=actor_nombre,
+                actor_rol=actor_rol,
+            )
+        except Exception:
+            logger.exception("No se pudo enviar el correo de eliminación de cuenta a %s", correo)
 
         registrar_evento(
             self.repo.db,

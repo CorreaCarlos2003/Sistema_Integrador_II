@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { pedirChat } from '../../../utils/chatApi'
+import { actorHeaders } from '../../../utils/actor'
 import { obtenerCambiosComparacion } from '../../../utils/comparacion'
 import { formatoRelativo } from '../../../utils/tiempo'
+import DocumentoPendienteModal from './DocumentoPendienteModal'
+import DocumentoSubidoModal from './DocumentoSubidoModal'
+import SubirDocumentoInfoModal from './SubirDocumentoInfoModal'
 import './ChatProyecto.css'
+
+const API_BASE_URL = 'http://127.0.0.1:8000'
+const EXTENSIONES_PERMITIDAS = ['.docx', '.pdf', '.xlsx', '.pptx', '.txt', '.md']
+const TAMANO_MAXIMO_BYTES = 30 * 1024 * 1024 // 30MB
 
 const IconVolver = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -41,6 +49,12 @@ const IconEnviar = () => (
 const IconChispa = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z" />
+  </svg>
+)
+
+const IconClip = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
   </svg>
 )
 
@@ -155,7 +169,12 @@ export default function ChatProyecto({ proyecto, sesion, onVolver }) {
   const [cargandoDetalle, setCargandoDetalle] = useState(false)
   const [ocupado, setOcupado] = useState(false)
   const [error, setError] = useState('')
+  const [mostrarInfoSubida, setMostrarInfoSubida] = useState(false)
+  const [subiendoDocumento, setSubiendoDocumento] = useState(false)
+  const [documentoPendienteAviso, setDocumentoPendienteAviso] = useState(null)
+  const [documentoSubidoAviso, setDocumentoSubidoAviso] = useState(null)
   const finMensajesRef = useRef(null)
+  const inputArchivoRef = useRef(null)
 
   const cargarLista = useCallback(async (archivadas, numeroPagina = 1) => {
     const datos = await pedirChat(
@@ -175,6 +194,12 @@ export default function ChatProyecto({ proyecto, sesion, onVolver }) {
     const datos = await pedirChat(`${base}/conversaciones/${id}`, token)
     setDetalle(datos)
     return datos
+  }, [base, token])
+
+  const recargarFuentes = useCallback(async () => {
+    const fuentes = await pedirChat(`${base}/documentos/versiones`, token)
+    setVersiones(fuentes)
+    setDocumentos(fuentes.filter((version) => version.vigente))
   }, [base, token])
 
   useEffect(() => {
@@ -400,6 +425,56 @@ export default function ChatProyecto({ proyecto, sesion, onVolver }) {
       : [...actuales, id])
   }
 
+  const handleAdjuntarClick = () => setMostrarInfoSubida(true)
+
+  const handleContinuarSubida = () => {
+    setMostrarInfoSubida(false)
+    inputArchivoRef.current?.click()
+  }
+
+  const handleArchivoSeleccionado = async (evento) => {
+    const archivo = evento.target.files?.[0]
+    evento.target.value = ''
+    if (!archivo) return
+
+    const extension = `.${archivo.name.split('.').pop()?.toLowerCase() || ''}`
+    if (!EXTENSIONES_PERMITIDAS.includes(extension)) {
+      setError('Solo se admiten documentos Word (.docx), PDF, Excel (.xlsx), PowerPoint (.pptx), Bloc de notas (.txt) o Markdown (.md).')
+      return
+    }
+    if (archivo.size > TAMANO_MAXIMO_BYTES) {
+      setError('El archivo supera el límite de 30MB permitido.')
+      return
+    }
+
+    setSubiendoDocumento(true)
+    setError('')
+    try {
+      const formData = new FormData()
+      formData.append('archivo', archivo)
+      const respuesta = await fetch(`${API_BASE_URL}${base}/documentos`, {
+        method: 'POST',
+        headers: { ...actorHeaders() },
+        body: formData,
+      })
+      if (!respuesta.ok) {
+        const detalle = await respuesta.json().catch(() => null)
+        throw new Error(detalle?.detail || 'No se pudo subir el documento')
+      }
+      const documentoSubido = await respuesta.json()
+      if (documentoSubido.estado_aprobacion === 'PENDIENTE') {
+        setDocumentoPendienteAviso(documentoSubido.nombre)
+      } else {
+        await recargarFuentes()
+        setDocumentoSubidoAviso(documentoSubido.nombre)
+      }
+    } catch (fallo) {
+      setError(fallo.message)
+    } finally {
+      setSubiendoDocumento(false)
+    }
+  }
+
   return (
     <div className="chat-proyecto">
       <div className="chat-proyecto__header">
@@ -565,13 +640,38 @@ export default function ChatProyecto({ proyecto, sesion, onVolver }) {
           </div>
 
           <form className="chat-proyecto__form" onSubmit={handleEnviar}>
+            <button type="button" className="chat-proyecto__adjuntar" onClick={handleAdjuntarClick}
+              disabled={ocupado || mostrarArchivadas || subiendoDocumento} aria-label="Adjuntar documento">
+              <IconClip />
+            </button>
             <input type="text" placeholder={mostrarArchivadas ? 'Restaura la conversación para continuar' : 'Pregunta algo sobre las fuentes del proyecto...'}
               value={pregunta} onChange={(evento) => setPregunta(evento.target.value)} maxLength={2000}
               disabled={ocupado || mostrarArchivadas} />
             <button type="submit" disabled={ocupado || mostrarArchivadas || !pregunta.trim()} aria-label="Enviar pregunta"><IconEnviar /></button>
           </form>
+          <input
+            ref={inputArchivoRef}
+            type="file"
+            accept=".docx,.pdf,.xlsx,.pptx,.txt,.md"
+            style={{ display: 'none' }}
+            onChange={handleArchivoSeleccionado}
+          />
         </main>
       </div>
+
+      <SubirDocumentoInfoModal
+        visible={mostrarInfoSubida}
+        onCerrar={() => setMostrarInfoSubida(false)}
+        onContinuar={handleContinuarSubida}
+      />
+      <DocumentoPendienteModal
+        nombreDocumento={documentoPendienteAviso}
+        onCerrar={() => setDocumentoPendienteAviso(null)}
+      />
+      <DocumentoSubidoModal
+        nombreDocumento={documentoSubidoAviso}
+        onCerrar={() => setDocumentoSubidoAviso(null)}
+      />
     </div>
   )
 }

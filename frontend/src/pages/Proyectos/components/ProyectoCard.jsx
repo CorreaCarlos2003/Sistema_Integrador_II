@@ -2,11 +2,14 @@ import { getInitials, getAvatarColors } from '../../../utils/avatarUtils'
 import { formatoRelativo } from '../../../utils/tiempo'
 import ProyectoAccionesMenu from './ProyectoAccionesMenu'
 
-export default function ProyectoCard({ proyecto, onSeleccionar, onArchivar, onEliminar }) {
+export default function ProyectoCard({ proyecto, sesion, onSeleccionar, onArchivar, onEliminar }) {
   const esActivo = proyecto.estado?.toLowerCase() === 'activo'
   const esPausado = proyecto.estado?.toLowerCase() === 'pausado'
   const esInactivo = proyecto.archivado || proyecto.estado?.toLowerCase() === 'inactivo'
-  
+
+  const miembroActual = (proyecto.miembros || []).find((m) => m.id === sesion?.id)
+  const inhabilitado = miembroActual?.activo === false
+
   // Función para determinar clase del badge
   const getBadgeClass = () => {
     if (esActivo) return 'proyecto-card__badge--activo'
@@ -61,7 +64,7 @@ export default function ProyectoCard({ proyecto, onSeleccionar, onArchivar, onEl
 
   return (
     <article
-      className="proyecto-card"
+      className={`proyecto-card ${inhabilitado ? 'proyecto-card--inhabilitado' : ''}`}
       onClick={() => onSeleccionar && onSeleccionar(proyecto)}
       tabIndex={0}
       role="button"
@@ -74,6 +77,9 @@ export default function ProyectoCard({ proyecto, onSeleccionar, onArchivar, onEl
       <div className="proyecto-card__header">
         <span className="proyecto-card__codigo">{proyecto.codigo || '#PRJ-000'}</span>
         <div className="proyecto-card__header-right">
+          {inhabilitado && (
+            <span className="proyecto-card__aviso-inhabilitado">Acceso inhabilitado</span>
+          )}
           <span className={`proyecto-card__badge ${getBadgeClass()}`}>
             <span className="proyecto-card__badge-dot"></span>
             {proyecto.archivado ? 'ARCHIVADO' : proyecto.estado?.toUpperCase()}
