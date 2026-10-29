@@ -1,0 +1,6 @@
+.docai-modal.documento-aviso { width: min(560px, calc(100vw - 48px)); }
+.documento-aviso--aprobado .docai-modal__icon { border-color: #d8e9df; background: #edf5f1; color: #2f6b63; }
+.documento-aviso--rechazado .docai-modal__icon { border-color: #ecd6cc; background: #fdf1ed; color: #ab3515; }
+.documento-aviso--pendiente .docai-modal__icon { border-color: #efe1bc; background: #fff8e9; color: #805d18; }
+.documento-aviso__nombre { margin: 0 0 16px; padding: 14px 16px; border: 1px solid #e5e7e3; border-radius: 10px; background: #f8f9f6; color: #252c29; font-size: 14px; font-weight: 500; line-height: 1.6; overflow-wrap: anywhere; }
+.documento-aviso__mensaje { margin: 0; color: #626b65; font-size: 14px; line-height: 1.7; }

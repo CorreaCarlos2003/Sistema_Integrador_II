@@ -1,13 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { getInitials, getAvatarColors } from '../../utils/avatarUtils'
 import { actorHeaders } from '../../utils/actor'
-import {
-  IconNavProyectos,
-  IconNavUsuarios,
-  IconNavRoles,
-  IconChispa,
-  IconBuscar,
-} from '../../components/icons'
+import { IconBuscar } from '../../components/icons'
+import PageHeader from '../../components/ui/PageHeader'
+import SurfaceCard from '../../components/ui/SurfaceCard'
+import Button from '../../components/ui/Button'
+import HistorialListado from './components/HistorialListado'
 import './Historial.css'
 
 const POR_PAGINA = 10
@@ -32,8 +29,6 @@ const TIPOS = [
   { clave: 'alerta', etiqueta: 'Alerta' },
 ]
 
-const ETIQUETA_MODULO = Object.fromEntries(MODULOS.map((m) => [m.clave, m.etiqueta]))
-
 function formatFechaISO(d) {
   return d.toISOString().slice(0, 10)
 }
@@ -57,43 +52,6 @@ function etiquetaDia(fechaISO) {
   if (mismoDia(fecha, hoy)) return `HOY — ${fecha.toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase()}`
   if (mismoDia(fecha, ayer)) return `AYER — ${fecha.toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase()}`
   return fecha.toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase()
-}
-
-function formatHora(fechaISO) {
-  const fecha = new Date(fechaISO)
-  return fecha.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-}
-
-function colorPorTipo(tipo) {
-  switch (tipo) {
-    case 'eliminacion':
-      return 'historial__dot--rojo'
-    case 'acceso':
-      return 'historial__dot--gris'
-    case 'proceso':
-      return 'historial__dot--negro'
-    case 'alerta':
-      return 'historial__dot--ambar'
-    default:
-      return 'historial__dot--teal'
-  }
-}
-
-const IconAcceso = (p) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}>
-    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-    <polyline points="16 17 21 12 16 7" />
-    <line x1="21" y1="12" x2="9" y2="12" />
-  </svg>
-)
-
-function IconModulo({ modulo, ...props }) {
-  if (modulo === 'proyectos') return <IconNavProyectos {...props} />
-  if (modulo === 'usuarios') return <IconNavUsuarios {...props} />
-  if (modulo === 'roles') return <IconNavRoles {...props} />
-  if (modulo === 'consulta_ia') return <IconChispa {...props} />
-  if (modulo === 'acceso') return <IconAcceso {...props} />
-  return <IconNavProyectos {...props} />
 }
 
 const IconExportar = (p) => (
@@ -133,6 +91,7 @@ export default function Historial() {
   const [pagina, setPagina] = useState(1)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
+  const [recarga, setRecarga] = useState(0)
   const [expandidoId, setExpandidoId] = useState(null)
   const [usuarios, setUsuarios] = useState([])
 
@@ -174,7 +133,7 @@ export default function Historial() {
     return () => {
       cancelado = true
     }
-  }, [busqueda, modulo, tipo, usuarioId, desde, hasta, pagina])
+  }, [busqueda, modulo, tipo, usuarioId, desde, hasta, pagina, recarga])
 
   const grupos = useMemo(() => {
     const porDia = new Map()
@@ -213,25 +172,16 @@ export default function Historial() {
   }
 
   return (
-    <div className="historial">
-      <div className="historial__header">
-        <div>
-          <h1 className="historial__titulo">Historial</h1>
-          <p className="historial__subtitulo">
-            Registro completo y auditable de la actividad del sistema con sello criptográfico.
-          </p>
-        </div>
-        <button type="button" className="historial__btn-exportar" onClick={exportar}>
-          <IconExportar />
-          Exportar registro
-        </button>
-      </div>
+    <div className="historial historial--modern" data-docai-layout="modern">
+      <PageHeader title="Historial" description="Consulta la actividad del sistema y sus registros por usuario, módulo y fecha."
+        actions={<Button onClick={exportar}><IconExportar />Exportar registro</Button>} />
 
-      <div className="historial__filtros">
-        <div className="historial__buscador">
+      <SurfaceCard className="historial__filtros" aria-label="Filtros del historial">
+        <div className="historial__buscador"><label htmlFor="historial-busqueda">Buscar actividad</label>
           <IconBuscar size={14} className="historial__buscador-icono" />
           <input
             type="text"
+            id="historial-busqueda" aria-label="Buscar en el historial"
             placeholder="Buscar por usuario, proyecto..."
             value={busqueda}
             onChange={(e) => {
@@ -242,7 +192,8 @@ export default function Historial() {
         </div>
 
         <div className="historial__select-wrap">
-          <select value={modulo} onChange={(e) => { setModulo(e.target.value); setPagina(1) }}>
+          <label htmlFor="historial-modulo">Módulo</label>
+          <select id="historial-modulo" aria-label="Módulo" value={modulo} onChange={(e) => { setModulo(e.target.value); setPagina(1) }}>
             {MODULOS.map((m) => (
               <option key={m.clave} value={m.clave}>{m.etiqueta}</option>
             ))}
@@ -251,7 +202,8 @@ export default function Historial() {
         </div>
 
         <div className="historial__select-wrap">
-          <select value={tipo} onChange={(e) => { setTipo(e.target.value); setPagina(1) }}>
+          <label htmlFor="historial-tipo">Tipo de acción</label>
+          <select id="historial-tipo" aria-label="Tipo de acción" value={tipo} onChange={(e) => { setTipo(e.target.value); setPagina(1) }}>
             {TIPOS.map((t) => (
               <option key={t.clave} value={t.clave}>{t.etiqueta}</option>
             ))}
@@ -260,7 +212,8 @@ export default function Historial() {
         </div>
 
         <div className="historial__select-wrap">
-          <select value={usuarioId} onChange={(e) => { setUsuarioId(e.target.value); setPagina(1) }}>
+          <label htmlFor="historial-usuario">Usuario</label>
+          <select id="historial-usuario" aria-label="Usuario" value={usuarioId} onChange={(e) => { setUsuarioId(e.target.value); setPagina(1) }}>
             <option value="Todos">Todos los usuarios</option>
             {usuarios.map((u) => (
               <option key={u.id} value={u.id}>{u.nombre}</option>
@@ -269,116 +222,71 @@ export default function Historial() {
           <IconChevronDown className="historial__select-icono" />
         </div>
 
-        <div className="historial__rango">
+        <div className="historial__rango"><label htmlFor="historial-desde">Desde</label>
           <input
             type="date"
+            id="historial-desde" aria-label="Desde"
             value={desde}
             max={hasta}
             onChange={(e) => { setRango((r) => ({ ...r, desde: e.target.value })); setPagina(1) }}
           />
-          <span>—</span>
+          <label htmlFor="historial-hasta">Hasta</label>
           <input
             type="date"
+            id="historial-hasta" aria-label="Hasta"
             value={hasta}
             min={desde}
             onChange={(e) => { setRango((r) => ({ ...r, hasta: e.target.value })); setPagina(1) }}
           />
         </div>
-      </div>
+      </SurfaceCard>
 
       <div className="historial__resumen">
         <span className="historial__registros">
-          REGISTROS IDENTIFICADOS: <strong>{total}</strong> evento{total === 1 ? '' : 's'} registrado{total === 1 ? '' : 's'}
+          Actividad registrada: <strong>{total}</strong> evento{total === 1 ? '' : 's'} registrado{total === 1 ? '' : 's'}
         </span>
-        <button type="button" className="historial__limpiar" onClick={limpiarFiltros}>
+        <Button type="button" className="historial__limpiar" onClick={limpiarFiltros}>
           <IconLimpiar />
           Limpiar filtros
-        </button>
+        </Button>
       </div>
 
-      {error && <div className="historial__error">{error}</div>}
 
-      <div className="historial__lista">
+      <SurfaceCard className="historial__lista" aria-label="Registro de actividad" aria-busy={cargando}>
         {cargando ? (
           <div className="historial__vacio">Cargando historial...</div>
+        ) : error ? (
+          <div className="historial__vacio"><p className="historial__error" role="alert">{error}</p><Button onClick={() => setRecarga((n) => n + 1)}>Reintentar</Button></div>
         ) : grupos.length === 0 ? (
           <div className="historial__vacio">No se encontraron eventos con los filtros seleccionados.</div>
         ) : (
-          grupos.map(([etiqueta, items]) => (
-            <div key={etiqueta} className="historial__grupo">
-              <div className="historial__grupo-titulo">
-                {etiqueta}
-              </div>
-              {items.map((evento) => {
-                const { background, color } = getAvatarColors(evento.actor_nombre)
-                const expandido = expandidoId === evento.id
-                return (
-                  <div key={evento.id} className="historial__fila">
-                    <span className={`historial__dot ${colorPorTipo(evento.tipo)}`} />
-                    <span className="historial__avatar" style={{ backgroundColor: background, color }}>
-                      {getInitials(evento.actor_nombre)}
-                    </span>
-                    <div className="historial__contenido">
-                      <div className="historial__linea1">
-                        <span className="historial__descripcion">{evento.descripcion}</span>
-                        <span className="historial__modulo-tag">
-                          <IconModulo modulo={evento.modulo} size={11} />
-                          {ETIQUETA_MODULO[evento.modulo] ?? evento.modulo}
-                        </span>
-                      </div>
-                      <div className="historial__linea2">
-                        {evento.referencia && <span>{evento.referencia}</span>}
-                        <span>{formatHora(evento.fecha)} hrs</span>
-                        {evento.duracion_ms != null && <span>{(evento.duracion_ms / 1000).toFixed(1)}s</span>}
-                      </div>
-                      {expandido && (
-                        <div className="historial__detalle">
-                          <span><strong>Actor:</strong> {evento.actor_nombre} {evento.actor_rol ? `(${evento.actor_rol})` : ''}</span>
-                          <span><strong>Módulo:</strong> {ETIQUETA_MODULO[evento.modulo] ?? evento.modulo}</span>
-                          <span><strong>Tipo:</strong> {evento.tipo}</span>
-                          {evento.proyecto_id && <span><strong>Proyecto ID:</strong> {evento.proyecto_id}</span>}
-                          <span><strong>Fecha completa:</strong> {new Date(evento.fecha).toLocaleString('es-PE')}</span>
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      className="historial__btn-detalle"
-                      onClick={() => setExpandidoId(expandido ? null : evento.id)}
-                    >
-                      <IconBuscar size={12} />
-                      {expandido ? 'Ocultar' : 'Ver detalle'}
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-          ))
+          <HistorialListado grupos={grupos} expandidoId={expandidoId} onExpandir={setExpandidoId} />
         )}
-      </div>
+      </SurfaceCard>
 
-      {totalPaginas > 1 && (
+      {!cargando && !error && totalPaginas > 1 && (
         <div className="historial__pie">
           <span className="historial__pie-info">
             Mostrando página <strong>{pagina}</strong> de <strong>{totalPaginas}</strong>
           </span>
           <div className="historial__paginacion">
-            <button type="button" disabled={pagina === 1} onClick={() => setPagina(pagina - 1)}>&lt;</button>
+            <Button type="button" aria-label="Página anterior" disabled={pagina === 1} onClick={() => setPagina(pagina - 1)}>&lt;</Button>
             {Array.from({ length: totalPaginas }, (_, i) => i + 1)
               .filter((n) => n === 1 || n === totalPaginas || Math.abs(n - pagina) <= 1)
               .map((n, idx, arr) => (
                 <span key={n} style={{ display: 'contents' }}>
                   {idx > 0 && arr[idx - 1] !== n - 1 && <span className="historial__paginacion-puntos">…</span>}
-                  <button
+                  <Button
                     type="button"
+                    aria-label={`Página ${n}`} aria-current={n === pagina ? 'page' : undefined}
                     className={n === pagina ? 'historial__pagina-activa' : ''}
                     onClick={() => setPagina(n)}
                   >
                     {n}
-                  </button>
+                  </Button>
                 </span>
               ))}
-            <button type="button" disabled={pagina === totalPaginas} onClick={() => setPagina(pagina + 1)}>&gt;</button>
+            <Button type="button" aria-label="Página siguiente" disabled={pagina === totalPaginas} onClick={() => setPagina(pagina + 1)}>&gt;</Button>
           </div>
         </div>
       )}

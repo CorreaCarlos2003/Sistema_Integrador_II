@@ -1,12 +1,9 @@
 import ProyectoCard from './ProyectoCard'
+import ProyectosVacio from './ProyectosVacio'
 
 export default function ProyectoGrid({ proyectos, sesion, onSeleccionarProyecto, onArchivarProyecto, onEliminarProyecto }) {
   if (!proyectos || proyectos.length === 0) {
-    return (
-      <div className="proyectos-vacio">
-        <p>No se encontraron proyectos con los filtros seleccionados.</p>
-      </div>
-    )
+    return <ProyectosVacio />
   }
 
   return (

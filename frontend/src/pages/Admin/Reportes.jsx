@@ -7,11 +7,12 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
-  PieChart,
-  Pie,
-  Cell,
 } from 'recharts'
 import { actorHeaders } from '../../utils/actor'
+import PageHeader from '../../components/ui/PageHeader'
+import Button from '../../components/ui/Button'
+import SurfaceCard from '../../components/ui/SurfaceCard'
+import { TarjetaStat, Donut } from './components/ReportesVisuales'
 import './Reportes.css'
 
 const COLOR_TEAL = '#2f6b63'
@@ -71,59 +72,11 @@ const IconChevronDown = (p) => (
   </svg>
 )
 
-function TarjetaStat({ etiqueta, valor, delta }) {
-  return (
-    <div className="reportes__stat">
-      <span className="reportes__stat-etiqueta">{etiqueta}</span>
-      <div className="reportes__stat-valor">{valor}</div>
-      <span className="reportes__stat-delta">{delta}</span>
-    </div>
-  )
-}
-
-function Donut({ datos, centroValor, centroEtiqueta }) {
-  return (
-    <div className="reportes__donut-fila">
-      <div className="reportes__donut-wrap">
-        <ResponsiveContainer width={140} height={140}>
-          <PieChart>
-            <Pie
-              data={datos}
-              dataKey="valor"
-              nameKey="nombre"
-              innerRadius={48}
-              outerRadius={65}
-              paddingAngle={datos.length > 1 ? 2 : 0}
-              stroke="none"
-            >
-              {datos.map((d) => (
-                <Cell key={d.nombre} fill={d.color} />
-              ))}
-            </Pie>
-          </PieChart>
-        </ResponsiveContainer>
-        <div className="reportes__donut-centro">
-          <strong>{centroValor}</strong>
-          <span>{centroEtiqueta}</span>
-        </div>
-      </div>
-      <div className="reportes__donut-leyenda">
-        {datos.map((d) => (
-          <div key={d.nombre} className="reportes__leyenda-item">
-            <span className="reportes__leyenda-dot" style={{ background: d.color }} />
-            <span className="reportes__leyenda-nombre">{d.nombre}</span>
-            <span className="reportes__leyenda-pct">{d.pct}%</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 export default function Reportes() {
   const [resumen, setResumen] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
+  const [recarga, setRecarga] = useState(0)
   const [{ desde, hasta }, setRango] = useState(rangoPorDefecto)
   const [filtroProyecto, setFiltroProyecto] = useState('Todos')
   const [filtroUsuario, setFiltroUsuario] = useState('Todos')
@@ -140,7 +93,7 @@ export default function Reportes() {
     return () => {
       cancelado = true
     }
-  }, [desde, hasta])
+  }, [desde, hasta, recarga])
 
   const exportar = () => {
     const params = new URLSearchParams({ desde, hasta })
@@ -213,36 +166,30 @@ export default function Reportes() {
   const totalSesiones = resumen?.actividad_por_rol.reduce((s, r) => s + r.total, 0) ?? 0
 
   return (
-    <div className="reportes">
-      <div className="reportes__header">
-        <div>
-          <h1 className="reportes__titulo">Reportes</h1>
-          <p className="reportes__subtitulo">Analiza el desempeño del sistema y exporta reportes para revisión o auditoría.</p>
+    <div className="reportes reportes--modern" data-docai-layout="modern">
+      <PageHeader title="Reportes" description="Analiza la actividad del sistema y consulta el uso de IA y documentos."
+        actions={<Button onClick={exportar}><IconExportar />Exportar reporte</Button>} />
+      <SurfaceCard className="reportes__periodo" aria-label="Periodo del reporte">
+        <div><h2>Periodo del reporte</h2><p>Las métricas y la exportación corresponden a estas fechas.</p></div>
+        <div className="reportes__rango">
+          <label>Desde<input type="date" value={desde} max={hasta} onChange={(e) => setRango((r) => ({ ...r, desde: e.target.value }))} /></label>
+          <label>Hasta<input type="date" value={hasta} min={desde} onChange={(e) => setRango((r) => ({ ...r, hasta: e.target.value }))} /></label>
         </div>
-        <div className="reportes__header-acciones">
-          <div className="reportes__rango">
-            <input type="date" value={desde} max={hasta} onChange={(e) => setRango((r) => ({ ...r, desde: e.target.value }))} />
-            <span>—</span>
-            <input type="date" value={hasta} min={desde} onChange={(e) => setRango((r) => ({ ...r, hasta: e.target.value }))} />
-          </div>
-          <button type="button" className="reportes__btn-exportar" onClick={exportar}>
-            <IconExportar />
-            Exportar reporte
-          </button>
-        </div>
-      </div>
+      </SurfaceCard>
 
-      {error && <div className="reportes__error">{error}</div>}
-
-      {cargando || !resumen ? (
-        <div className="reportes__vacio">Cargando métricas...</div>
+      {cargando ? (
+        <SurfaceCard className="reportes__vacio" role="status">Cargando métricas...</SurfaceCard>
+      ) : error ? (
+        <SurfaceCard className="reportes__vacio"><p role="alert">{error}</p><Button onClick={() => setRecarga((n) => n + 1)}>Reintentar</Button></SurfaceCard>
+      ) : !resumen ? (
+        <SurfaceCard className="reportes__vacio">No hay métricas disponibles para este periodo.</SurfaceCard>
       ) : (
         <>
           <div className="reportes__stats">
-            <TarjetaStat etiqueta="CONSULTAS IA TOTALES" valor={resumen.consultas_ia_totales.valor_formateado} delta={resumen.consultas_ia_totales.delta_texto} />
-            <TarjetaStat etiqueta="DOCUMENTOS PROCESADOS" valor={resumen.documentos_procesados.valor_formateado} delta={resumen.documentos_procesados.delta_texto} />
-            <TarjetaStat etiqueta="USUARIOS ACTIVOS" valor={resumen.usuarios_activos.valor_formateado} delta={resumen.usuarios_activos.delta_texto} />
-            <TarjetaStat etiqueta="TIEMPO PROM. RESPUESTA IA" valor={resumen.tiempo_prom_respuesta_ia.valor_formateado} delta={resumen.tiempo_prom_respuesta_ia.delta_texto} />
+            <TarjetaStat etiqueta="Consultas IA totales" valor={resumen.consultas_ia_totales.valor_formateado} delta={resumen.consultas_ia_totales.delta_texto} />
+            <TarjetaStat etiqueta="Documentos procesados" valor={resumen.documentos_procesados.valor_formateado} delta={resumen.documentos_procesados.delta_texto} />
+            <TarjetaStat etiqueta="Usuarios activos" valor={resumen.usuarios_activos.valor_formateado} delta={resumen.usuarios_activos.delta_texto} />
+            <TarjetaStat etiqueta="Tiempo promedio de respuesta IA" valor={resumen.tiempo_prom_respuesta_ia.valor_formateado} delta={resumen.tiempo_prom_respuesta_ia.delta_texto} />
           </div>
 
           <div className="reportes__fila-dos">
@@ -267,7 +214,7 @@ export default function Reportes() {
                   <YAxis tick={{ fontSize: 10, fill: 'var(--texto-tenue)' }} axisLine={false} tickLine={false} allowDecimals={false} />
                   <Tooltip
                     labelFormatter={formatFechaCorta}
-                    contentStyle={{ fontSize: 12, borderRadius: 4, border: '1px solid var(--borde-fuerte)' }}
+                    contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid var(--borde-fuerte)' }}
                   />
                   <Line type="monotone" dataKey="valor" stroke={COLOR_TEAL} strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 4 }} />
                 </LineChart>
@@ -344,7 +291,7 @@ export default function Reportes() {
               </div>
               <div className="reportes__filtros-tabla">
                 <div className="reportes__select-wrap">
-                  <select value={filtroProyecto} onChange={(e) => setFiltroProyecto(e.target.value)}>
+                  <select aria-label="Proyecto del uso de IA" value={filtroProyecto} onChange={(e) => setFiltroProyecto(e.target.value)}>
                     <option value="Todos">Proyecto: Todos</option>
                     {proyectosDisponibles.map(([id, nombre]) => (
                       <option key={id} value={id}>{nombre}</option>
@@ -353,7 +300,7 @@ export default function Reportes() {
                   <IconChevronDown className="reportes__select-icono" />
                 </div>
                 <div className="reportes__select-wrap">
-                  <select value={filtroUsuario} onChange={(e) => setFiltroUsuario(e.target.value)}>
+                  <select aria-label="Usuario del uso de IA" value={filtroUsuario} onChange={(e) => setFiltroUsuario(e.target.value)}>
                     <option value="Todos">Usuario: Todos</option>
                     {usuariosDisponibles.map(([id, nombre]) => (
                       <option key={id} value={id}>{nombre}</option>
@@ -365,7 +312,7 @@ export default function Reportes() {
             </div>
 
             <div className="reportes__tabla-wrap">
-              <table className="reportes__tabla">
+              <table className="reportes__tabla" aria-label="Uso de IA por usuario y proyecto">
                 <thead>
                   <tr>
                     <th>Usuario</th>

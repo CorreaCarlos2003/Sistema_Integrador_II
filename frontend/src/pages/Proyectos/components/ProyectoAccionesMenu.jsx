@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import './ProyectoAccionesMenu.css'
 
 const IconPuntos = (p) => (
@@ -12,6 +12,7 @@ const IconPuntos = (p) => (
 // Solo se muestra cuando se recibe alguna acción (únicamente el Administrador del sistema).
 export default function ProyectoAccionesMenu({ proyecto, onArchivar, onEliminar, align = 'right' }) {
   const [abierto, setAbierto] = useState(false)
+  const triggerRef = useRef(null)
 
   if (!onArchivar && !onEliminar) return null
 
@@ -19,6 +20,7 @@ export default function ProyectoAccionesMenu({ proyecto, onArchivar, onEliminar,
     <div className="proyecto-acciones-menu" onClick={(e) => e.stopPropagation()}>
       <button
         type="button"
+        ref={triggerRef}
         className="proyecto-acciones-menu__btn"
         aria-label="Opciones del proyecto"
         onClick={() => setAbierto((v) => !v)}
@@ -48,7 +50,7 @@ export default function ProyectoAccionesMenu({ proyecto, onArchivar, onEliminar,
               className="proyecto-acciones-menu__peligro"
               onClick={() => {
                 setAbierto(false)
-                onEliminar(proyecto)
+                onEliminar(proyecto, triggerRef.current)
               }}
             >
               Eliminar proyecto

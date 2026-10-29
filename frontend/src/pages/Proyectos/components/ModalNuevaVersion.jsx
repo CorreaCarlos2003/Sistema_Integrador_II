@@ -1,66 +1,51 @@
-import { useEffect, useRef, useState } from 'react'
-import './VersionesDocumento.css'
+import { useId, useRef, useState } from 'react'
+import { IconDocumento, IconSubirArchivo } from '../../../components/icons'
+import ModalShell from '../../../components/ui/ModalShell'
+import Button from '../../../components/ui/Button'
+import FormField from '../../../components/ui/FormField'
+import { DOCUMENTO_ACCEPT, validarArchivoDocumento } from '../../../utils/documentoArchivo'
+import ReglasArchivoDocumento from './ReglasArchivoDocumento'
+import ProgresoCargaDocumento from './ProgresoCargaDocumento'
 
-export default function ModalNuevaVersion({ documento, cargando, onCancelar, onConfirmar }) {
+export default function ModalNuevaVersion({ documento, cargando, carga, error, onArchivoCambiado, onCancelarCarga, onCancelar, onConfirmar }) {
   const [archivo, setArchivo] = useState(null)
+  const [errorArchivo, setErrorArchivo] = useState(null)
   const inputRef = useRef(null)
-
-  useEffect(() => {
-    if (documento) window.setTimeout(() => inputRef.current?.focus(), 0)
-  }, [documento])
-
-  useEffect(() => {
-    const cerrarConEscape = (evento) => {
-      if (evento.key === 'Escape' && !cargando) onCancelar()
-    }
-    window.addEventListener('keydown', cerrarConEscape)
-    return () => window.removeEventListener('keydown', cerrarConEscape)
-  }, [cargando, onCancelar])
-
-  if (!documento) return null
-
+  const formId = useId()
+  const inputId = `${formId}-archivo`
+  const errorId = `${formId}-error`
+  const mensajeError = errorArchivo || error
   const confirmar = (evento) => {
     evento.preventDefault()
-    if (archivo) onConfirmar(archivo)
+    if (archivo && !errorArchivo && !cargando) onConfirmar(archivo)
   }
 
   return (
-    <div className="versiones-modal__fondo" role="presentation" onMouseDown={(evento) => {
-      if (evento.target === evento.currentTarget && !cargando) onCancelar()
-    }}>
-      <section className="versiones-modal" role="dialog" aria-modal="true" aria-labelledby="modal-version-titulo">
-        <header>
-          <div>
-            <span>Nueva versión</span>
-            <h2 id="modal-version-titulo">{documento.nombre}</h2>
-          </div>
-          <button type="button" onClick={onCancelar} disabled={cargando} aria-label="Cerrar">×</button>
-        </header>
-        <form onSubmit={confirmar}>
-          <div className="versiones-modal__actual">
-            <span>Versión vigente</span>
-            <strong>v{documento.numero_version || '1'}</strong>
-          </div>
-          <label className="versiones-modal__archivo">
-            Archivo (máx. 30MB)
-            <input
-              ref={inputRef}
-              type="file"
-              accept=".docx,.pdf,.xlsx,.pptx,.txt,.md"
-              onChange={(evento) => setArchivo(evento.target.files?.[0] || null)}
-              disabled={cargando}
-              required
-            />
-          </label>
-          <p>El backend asignará automáticamente el siguiente número y conservará las versiones anteriores.</p>
-          <footer>
-            <button type="button" onClick={onCancelar} disabled={cargando}>Cancelar</button>
-            <button type="submit" className="versiones-modal__principal" disabled={!archivo || cargando}>
-              {cargando ? 'Procesando...' : 'Subir nueva versión'}
-            </button>
-          </footer>
-        </form>
-      </section>
-    </div>
+    <ModalShell open={Boolean(documento)} onClose={onCancelar} title="Nueva versión"
+      description="Actualiza el documento conservando sus versiones anteriores."
+      className="documento-carga-modal documento-carga-modal--version" icon={<IconSubirArchivo size={20} />}
+      busy={cargando} dismissOnBackdrop initialFocusRef={inputRef}
+      footer={<><Button onClick={onCancelar} disabled={cargando}>Cancelar</Button><Button variant="primary" type="submit" form={formId} disabled={!archivo || Boolean(errorArchivo) || cargando}>{cargando ? 'Procesando...' : 'Subir nueva versión'}</Button></>}>
+      {documento && <form id={formId} onSubmit={confirmar}>
+        <div className="documento-carga__actual">
+          <span className="documento-carga__archivo-icono" aria-hidden="true"><IconDocumento size={20} /></span>
+          <div><strong>{documento.nombre}</strong><span>Versión vigente · v{documento.numero_version || '1'}</span></div>
+        </div>
+        <FormField htmlFor={inputId} label="Archivo de la nueva versión" required>
+          <input id={inputId} ref={inputRef} type="file" accept={DOCUMENTO_ACCEPT} required disabled={cargando}
+            aria-invalid={Boolean(errorArchivo)} aria-describedby={mensajeError ? errorId : undefined}
+            onChange={(evento) => {
+              const elegido = evento.target.files?.[0] || null
+              setArchivo(elegido)
+              setErrorArchivo(elegido ? validarArchivoDocumento(elegido) : null)
+              onArchivoCambiado?.()
+            }} />
+        </FormField>
+        <ReglasArchivoDocumento />
+        <p className="documento-carga__nota">Se asignará el siguiente número de versión automáticamente. Las versiones anteriores seguirán disponibles en el historial.</p>
+        {mensajeError && <p id={errorId} className="documento-carga__error" role="alert">{mensajeError}</p>}
+      </form>}
+      {documento && cargando && <ProgresoCargaDocumento carga={carga} onCancelar={onCancelarCarga} inline />}
+    </ModalShell>
   )
 }

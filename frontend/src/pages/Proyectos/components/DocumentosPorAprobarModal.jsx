@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { actorHeaders } from '../../../utils/actor'
-import { IconReloj } from '../../../components/icons'
+import { IconReloj, IconDocumento, IconAlerta } from '../../../components/icons'
+import ModalShell from '../../../components/ui/ModalShell'
+import Button from '../../../components/ui/Button'
 import DocumentoResultadoModal from './DocumentoResultadoModal'
-import './ModalNuevoProyecto.css'
 import './DocumentosPorAprobarModal.css'
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
@@ -18,12 +19,16 @@ export default function DocumentosPorAprobarModal({ proyectoId, onCerrar, onCamb
   const [pendientes, setPendientes] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
+  const [errorCarga, setErrorCarga] = useState(false)
+  const cerrarRef = useRef(null)
   const [procesandoId, setProcesandoId] = useState(null)
+  const [accionEnCurso, setAccionEnCurso] = useState(null)
   const [resultado, setResultado] = useState(null)
 
   const cargarPendientes = async () => {
     setCargando(true)
     setError('')
+    setErrorCarga(false)
     try {
       const respuesta = await fetch(`${API_BASE_URL}/proyectos/${proyectoId}/documentos/pendientes`, {
         headers: { ...actorHeaders() },
@@ -35,6 +40,7 @@ export default function DocumentosPorAprobarModal({ proyectoId, onCerrar, onCamb
       setPendientes(await respuesta.json())
     } catch (err) {
       setError(err.message)
+      setErrorCarga(true)
     } finally {
       setCargando(false)
     }
@@ -46,8 +52,10 @@ export default function DocumentosPorAprobarModal({ proyectoId, onCerrar, onCamb
   }, [proyectoId])
 
   const resolver = async (documentoId, nombreDocumento, accion) => {
+    if (procesandoId !== null) return
     setError('')
     setProcesandoId(documentoId)
+    setAccionEnCurso(accion)
     try {
       const respuesta = await fetch(
         `${API_BASE_URL}/proyectos/${proyectoId}/documentos/${documentoId}/${accion}`,
@@ -64,69 +72,47 @@ export default function DocumentosPorAprobarModal({ proyectoId, onCerrar, onCamb
       setError(err.message)
     } finally {
       setProcesandoId(null)
+      setAccionEnCurso(null)
     }
   }
 
+  const procesando = procesandoId !== null
   return (
     <>
-    <div className="modal-overlay" onClick={onCerrar}>
-      <div className="modal-contenido" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Documentos por aprobar</h2>
-          <button className="modal-close" onClick={onCerrar}>&times;</button>
-        </div>
-
-        {error && <div className="modal-error">{error}</div>}
-
+      <ModalShell open onClose={onCerrar} title="Documentos por aprobar"
+        description="Revisa los archivos pendientes antes de incorporarlos al proyecto."
+        icon={<IconReloj size={20} />} className="doc-aprobar-modal" busy={procesando} dismissOnBackdrop initialFocusRef={cerrarRef}
+        footer={<>{procesando && <span className="doc-aprobar__procesando" role="status">Procesando decisión...</span>}<Button ref={cerrarRef} onClick={onCerrar} disabled={procesando}>Cerrar</Button></>}>
         {cargando ? (
-          <p className="doc-aprobar__vacio">Cargando...</p>
-        ) : pendientes.length === 0 ? (
-          <p className="doc-aprobar__vacio">No hay documentos esperando aprobación en este proyecto.</p>
-        ) : (
-          <ul className="doc-aprobar__lista">
-            {pendientes.map((doc) => (
-              <li key={doc.id} className="doc-aprobar__fila">
-                <span className="doc-aprobar__icono">
-                  <IconReloj size={18} />
-                </span>
-                <div className="doc-aprobar__info">
-                  <strong>{doc.nombre}</strong>
-                  <span>
-                    Subido por {doc.subido_por_nombre} · {formatFechaHora(doc.fecha_subida)}
-                  </span>
-                </div>
-                <div className="doc-aprobar__acciones">
-                  <button
-                    type="button"
-                    className="doc-aprobar__btn doc-aprobar__btn--aprobar"
-                    disabled={procesandoId === doc.id}
-                    onClick={() => resolver(doc.id, doc.nombre, 'aprobar')}
-                  >
-                    Aprobar
-                  </button>
-                  <button
-                    type="button"
-                    className="doc-aprobar__btn doc-aprobar__btn--rechazar"
-                    disabled={procesandoId === doc.id}
-                    onClick={() => resolver(doc.id, doc.nombre, 'rechazar')}
-                  >
-                    Rechazar
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <div className="modal-footer modal-footer--centrado">
-          <button type="button" className="btn-submit" onClick={onCerrar}>
-            Cerrar
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <DocumentoResultadoModal resultado={resultado} onCerrar={() => setResultado(null)} />
+          <div className="doc-aprobar__estado" role="status"><IconReloj size={24} aria-hidden="true" /><strong>Cargando documentos pendientes...</strong><p>Estamos consultando los archivos por revisar.</p></div>
+        ) : errorCarga ? (
+          <div className="doc-aprobar__estado doc-aprobar__estado--error" role="alert"><IconAlerta size={24} aria-hidden="true" /><strong>No pudimos cargar los documentos pendientes</strong><p>{error}</p><Button onClick={cargarPendientes}>Reintentar</Button></div>
+        ) : <>
+          {error && <p className="doc-aprobar__error" role="alert">{error}</p>}
+          {pendientes.length === 0 ? (
+            <div className="doc-aprobar__estado" role="status"><IconDocumento size={24} aria-hidden="true" /><strong>No hay documentos pendientes</strong><p>No hay documentos esperando aprobación en este proyecto.</p></div>
+          ) : <>
+            <div className="doc-aprobar__resumen"><strong>{pendientes.length} {pendientes.length === 1 ? 'documento pendiente' : 'documentos pendientes'}</strong><span>Rechazar elimina el documento del proyecto.</span></div>
+            <ul className="doc-aprobar__lista" aria-label="Documentos pendientes de aprobación">
+              {pendientes.map((doc) => (
+                <li key={doc.id} className="doc-aprobar__fila" aria-busy={procesandoId === doc.id}>
+                  <span className="doc-aprobar__icono" aria-hidden="true"><IconDocumento size={18} /></span>
+                  <div className="doc-aprobar__info">
+                    <strong>{doc.nombre}</strong>
+                    <span>Subido por {doc.subido_por_nombre || 'Usuario no disponible'}</span>
+                    <span>{formatFechaHora(doc.fecha_subida)}</span>
+                  </div>
+                  <div className="doc-aprobar__acciones">
+                    <Button className="doc-aprobar__rechazar" disabled={procesando} onClick={() => resolver(doc.id, doc.nombre, 'rechazar')} aria-label={`Rechazar ${doc.nombre}`}>{procesandoId === doc.id && accionEnCurso === 'rechazar' ? 'Rechazando...' : 'Rechazar'}</Button>
+                    <Button variant="primary" disabled={procesando} onClick={() => resolver(doc.id, doc.nombre, 'aprobar')} aria-label={`Aprobar ${doc.nombre}`}>{procesandoId === doc.id && accionEnCurso === 'aprobar' ? 'Aprobando...' : 'Aprobar'}</Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </>}
+        </>}
+      </ModalShell>
+      <DocumentoResultadoModal resultado={resultado} onCerrar={() => setResultado(null)} returnFocusRef={cerrarRef} />
     </>
   )
 }

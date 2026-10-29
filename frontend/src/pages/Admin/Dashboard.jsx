@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import './Dashboard.css'
+import PageHeader from '../../components/ui/PageHeader'
+import SurfaceCard from '../../components/ui/SurfaceCard'
 import InvitacionesProyectos from '../../components/InvitacionesProyectos'
 import { formatoRelativo } from '../../utils/tiempo'
 import {
@@ -46,15 +48,18 @@ export default function Dashboard({ sesion }) {
   }, [])
 
   return (
-    <div className="dash">
-      <div className="dash__encabezado">
-        <h1 className="dash__saludo">¡Hola, {nombre}!</h1>
-        <p className="dash__subtitulo">Aquí tienes un resumen de la actividad reciente en DocAI.</p>
-      </div>
+    <div className="dash dash--admin-pilot" data-docai-layout="modern">
+      <PageHeader
+        className="dash__encabezado"
+        titleClassName="dash__saludo"
+        descriptionClassName="dash__subtitulo"
+        title={`¡Hola, ${nombre}!`}
+        description="Aquí tienes un resumen de la actividad reciente en DocAI."
+      />
 
       <InvitacionesProyectos sesion={sesion} />
 
-      {error && <p className="login__error">{error}</p>}
+      {error && <p className="dash__error">{error}</p>}
 
       <div className="dash__metricas">
         {METRICAS_BASE.map(({ id, Icono, etiqueta, titulo, campo }) => (
@@ -79,7 +84,7 @@ export default function Dashboard({ sesion }) {
         ))}
       </div>
 
-      <section className="dash__card dash__atencion">
+      <SurfaceCard className="dash__card dash__atencion">
         <div className="dash__atencion-encabezado">
           <span className="dash__atencion-icono">
             <IconAdvertenciaTriangulo />
@@ -114,9 +119,9 @@ export default function Dashboard({ sesion }) {
         ) : (
           <p className="dash__invitacion-vacio">Sin incidentes pendientes. Todo en orden.</p>
         )}
-      </section>
+      </SurfaceCard>
 
-      <section className="dash__card dash__actividad">
+      <SurfaceCard className="dash__card dash__actividad">
         <div className="dash__card-encabezado">
           <h2>
             <span className="dash__punto-brillante" />
@@ -140,7 +145,7 @@ export default function Dashboard({ sesion }) {
         ) : (
           <p className="dash__invitacion-vacio">Todavía no hay actividad registrada.</p>
         )}
-      </section>
+      </SurfaceCard>
     </div>
   )
 }

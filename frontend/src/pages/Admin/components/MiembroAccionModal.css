@@ -1,0 +1,13 @@
+.docai-modal.miembro-accion { width: min(580px, calc(100vw - 48px)); }
+.miembro-accion--habilitar .docai-modal__icon { border-color: #d8e9df; background: #edf5f1; color: #2f6b63; }
+.miembro-accion--inhabilitar .docai-modal__icon, .miembro-accion--cancelar .docai-modal__icon { border-color: #efe1bc; background: #fff8e9; color: #805d18; }
+.miembro-accion--eliminar .docai-modal__icon { border-color: #ecd6cc; background: #fdf1ed; color: #ab3515; }
+.miembro-accion__identidad { display: flex; flex-direction: column; gap: 5px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #e5e7e3; border-radius: 10px; background: #f8f9f6; overflow-wrap: anywhere; }
+.miembro-accion__identidad strong { font-size: 14px; font-weight: 500; line-height: 1.6; }
+.miembro-accion__identidad > span { color: #626b65; font-size: 12px; line-height: 1.6; }
+.miembro-accion__proyecto { margin: 16px 0; color: #626b65; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.miembro-accion__proyecto strong { font-weight: 500; }
+.miembro-accion__alcance { margin: 0; color: #4b5850; font-size: 14px; line-height: 1.7; }
+.miembro-accion__alcance--peligro { padding: 12px 14px; border: 1px solid #ecd6cc; border-radius: 8px; background: #fdf3ee; color: #923e28; }
+.miembro-accion__estado { margin: 16px 0 0; color: #626b65; font-size: 12px; }
+.miembro-accion__error { margin: 16px 0 0; padding: 12px 14px; border: 1px solid #efd8d0; border-radius: 8px; background: #fff5ef; color: #923e28; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }

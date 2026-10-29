@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { actorHeaders } from '../../utils/actor'
 import ProyectosHeader from './components/ProyectosHeader'
 import ProyectoGrid from './components/ProyectoGrid'
@@ -13,10 +13,15 @@ import ProgresoCargaDocumento from './components/ProgresoCargaDocumento'
 import useCargaDocumento from './hooks/useCargaDocumento'
 import useEstadoRag from './hooks/useEstadoRag'
 import './Proyectos.css'
+import Button from '../../components/ui/Button'
+import SurfaceCard from '../../components/ui/SurfaceCard'
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
 
 export default function Proyectos({ sesion, onSeleccionarProyecto }) {
+  const actionTriggerRef = useRef(null)
+  const accessTriggerRef = useRef(null)
+  const listingRef = useRef(null)
   const estadoRag = useEstadoRag()
   const cargaDocumentos = useCargaDocumento()
   const [proyectos, setProyectos] = useState([])
@@ -117,8 +122,9 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
     return miembro?.activo === false
   }
 
-  const seleccionarProyecto = (proyecto) => {
+  const seleccionarProyecto = (proyecto, trigger) => {
     if (estaInhabilitadoParaMi(proyecto)) {
+      accessTriggerRef.current = trigger
       setProyectoInhabilitadoAviso(proyecto)
       return
     }
@@ -150,7 +156,8 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
     }
   }
 
-  const pedirEliminarProyecto = (proyecto) => {
+  const pedirEliminarProyecto = (proyecto, trigger) => {
+    actionTriggerRef.current = trigger
     setAccionError(null)
     setProyectoAEliminar(proyecto)
   }
@@ -217,13 +224,15 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
     const pages = [];
     for (let i = 1; i <= totalPages; i++) {
       pages.push(
-        <button
+        <Button
           key={i}
           className={`proyectos-paginacion__btn ${page === i ? 'proyectos-paginacion__btn--activo' : ''}`}
           onClick={() => handlePageChange(i)}
+          aria-label={`Página ${i}`}
+          aria-current={page === i ? 'page' : undefined}
         >
           {i}
-        </button>
+        </Button>
       );
     }
 
@@ -232,23 +241,25 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
         <span className="proyectos-footer-bar__info">
           Mostrando {(page - 1) * limit + 1}-{Math.min(page * limit, totalItems)} de {totalItems} proyectos registrados
         </span>
-        <div className="proyectos-paginacion">
-          <button 
+        <nav className="proyectos-paginacion" aria-label="Paginación de proyectos">
+          <Button
             className="proyectos-paginacion__nav" 
             onClick={() => handlePageChange(page - 1)}
             disabled={page === 1}
+            aria-label="Página anterior"
           >
             &lt;
-          </button>
+          </Button>
           {pages}
-          <button 
+          <Button
             className="proyectos-paginacion__nav" 
             onClick={() => handlePageChange(page + 1)}
             disabled={page === totalPages}
+            aria-label="Página siguiente"
           >
             &gt;
-          </button>
-        </div>
+          </Button>
+        </nav>
       </div>
     );
   }
@@ -291,10 +302,12 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
           onCancelar={() => setProyectoAEliminar(null)}
           onConfirmar={confirmarEliminarProyecto}
           loading={eliminando}
+          returnFocusRef={actionTriggerRef}
         />
         <ProyectoEliminadoExito
           nombreProyecto={proyectoEliminadoNombre}
           onCerrar={() => setProyectoEliminadoNombre(null)}
+          returnFocusRef={listingRef}
         />
         <ProgresoCargaDocumento carga={cargaDocumentos.carga} onCancelar={cargaDocumentos.cancelar} onCerrar={cargaDocumentos.cerrar} />
       </>
@@ -302,7 +315,7 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
   }
 
   return (
-    <div className="proyectos-contenedor">
+    <div className="proyectos-contenedor proyectos--modern" data-docai-layout="modern">
       {/* Cabecera con título, filtros y selector de vista */}
       <ProyectosHeader
         busqueda={busqueda}
@@ -320,12 +333,17 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
         onNuevoProyecto={() => setIsModalOpen(true)}
       />
 
-      {loading && <div className="proyectos-loader">Cargando proyectos...</div>}
-      {error && <div className="proyectos-error">Error: {error}</div>}
-      {accionError && <div className="proyectos-error">Error: {accionError}</div>}
+      {loading && (
+        <SurfaceCard className="proyectos-loader" role="status">
+          <span className="proyectos-loader__indicador" aria-hidden="true" />
+          Cargando proyectos...
+        </SurfaceCard>
+      )}
+      {error && <SurfaceCard className="proyectos-error" role="alert">Error: {error}</SurfaceCard>}
+      {accionError && <SurfaceCard className="proyectos-error" role="alert">Error: {accionError}</SurfaceCard>}
 
       {/* Renderizado condicional según el modo de vista seleccionado */}
-      <main className="proyectos-contenido">
+      <section ref={listingRef} tabIndex={-1} className="proyectos-contenido" aria-label="Listado de proyectos" aria-busy={loading}>
         {!loading && !error && (
           vista === 'cards' ? (
             <ProyectoGrid
@@ -345,7 +363,7 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
             />
           )
         )}
-      </main>
+      </section>
 
       {/* Footer y Paginación */}
       {!loading && !error && renderPagination()}
@@ -365,14 +383,17 @@ export default function Proyectos({ sesion, onSeleccionarProyecto }) {
         onCancelar={() => setProyectoAEliminar(null)}
         onConfirmar={confirmarEliminarProyecto}
         loading={eliminando}
+        returnFocusRef={actionTriggerRef}
       />
       <ProyectoEliminadoExito
         nombreProyecto={proyectoEliminadoNombre}
         onCerrar={() => setProyectoEliminadoNombre(null)}
+        returnFocusRef={listingRef}
       />
       <ProyectoInhabilitadoModal
         proyecto={proyectoInhabilitadoAviso}
         onCerrar={() => setProyectoInhabilitadoAviso(null)}
+        returnFocusRef={accessTriggerRef}
       />
       <ProgresoCargaDocumento carga={cargaDocumentos.carga} onCancelar={cargaDocumentos.cancelar} onCerrar={cargaDocumentos.cerrar} />
     </div>

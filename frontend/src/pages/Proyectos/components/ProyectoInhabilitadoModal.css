@@ -1,0 +1,32 @@
+.docai-modal.proyecto-acceso-inhabilitado {
+  width: min(560px, calc(100vw - 48px));
+}
+
+.proyecto-acceso-inhabilitado .docai-modal__icon {
+  border-color: #eadfbe;
+  background: #fff9ed;
+  color: #805d18;
+}
+
+.proyecto-acceso-inhabilitado__mensaje {
+  margin: 0 0 20px;
+  color: var(--docai-pilot-ink, #252c29);
+  font-size: 14px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.proyecto-acceso-inhabilitado__mensaje strong {
+  font-weight: 600;
+}
+
+.proyecto-acceso-inhabilitado__orientacion {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid #e6e9e3;
+  border-radius: 10px;
+  background: #f8f9f6;
+  color: var(--docai-pilot-muted, #626b65);
+  font-size: 13px;
+  line-height: 1.65;
+}

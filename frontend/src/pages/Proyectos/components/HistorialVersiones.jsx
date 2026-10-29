@@ -1,47 +1,61 @@
-import './VersionesDocumento.css'
+import { useRef } from 'react'
+import ModalShell from '../../../components/ui/ModalShell'
+import Button from '../../../components/ui/Button'
+import { IconDocumento, IconReloj, IconAlerta } from '../../../components/icons'
+import './HistorialVersiones.css'
 
 function fechaCompleta(valor) {
   if (!valor) return 'Sin fecha'
+  const fecha = new Date(valor)
+  if (Number.isNaN(fecha.getTime())) return 'Sin fecha'
   return new Intl.DateTimeFormat('es-PE', {
     dateStyle: 'medium',
     timeStyle: 'short',
-  }).format(new Date(valor))
+  }).format(fecha)
 }
 
-export default function HistorialVersiones({ documento, versiones, cargando, error, onCerrar }) {
-  if (!documento) return null
-
+export default function HistorialVersiones({ documento, versiones, cargando, error, onCerrar, onReintentar }) {
+  const cerrarRef = useRef(null)
   return (
-    <div className="versiones-modal__fondo" role="presentation" onMouseDown={(evento) => {
-      if (evento.target === evento.currentTarget) onCerrar()
-    }}>
-      <section className="versiones-modal versiones-modal--historial" role="dialog" aria-modal="true" aria-labelledby="historial-versiones-titulo">
-        <header>
-          <div>
-            <span>Historial documental</span>
-            <h2 id="historial-versiones-titulo">{documento.nombre}</h2>
-          </div>
-          <button type="button" onClick={onCerrar} aria-label="Cerrar">×</button>
-        </header>
-        <div className="versiones-historial">
-          {cargando && <p>Cargando versiones...</p>}
-          {error && <p className="versiones-historial__error">{error}</p>}
-          {!cargando && !error && versiones.length === 0 && <p>No hay versiones registradas.</p>}
-          {!cargando && versiones.map((version) => (
-            <article key={version.version_id || version.id}>
-              <div className="versiones-historial__numero">
-                <strong>v{version.numero}</strong>
-                {version.vigente && <span>Vigente</span>}
-              </div>
-              <div className="versiones-historial__datos">
-                <strong>{version.nombre}</strong>
-                <span>{fechaCompleta(version.fecha)}</span>
-              </div>
-              <span className="versiones-historial__chunks">{version.chunks_indexados} fragmentos</span>
-            </article>
-          ))}
+    <ModalShell open={Boolean(documento)} onClose={onCerrar} title="Historial de versiones"
+      description="Consulta las versiones registradas de este documento."
+      icon={<IconReloj size={20} />} className="historial-versiones-modal" dismissOnBackdrop initialFocusRef={cerrarRef}
+      footer={<Button ref={cerrarRef} onClick={onCerrar}>Cerrar</Button>}>
+      {documento && <>
+        <div className="historial-versiones__documento">
+          <span className="historial-versiones__icono" aria-hidden="true"><IconDocumento size={20} /></span>
+          <div><span>Documento</span><strong>{documento.nombre}</strong></div>
         </div>
-      </section>
-    </div>
+        <div className="historial-versiones" aria-busy={cargando}>
+          {cargando ? (
+            <div className="historial-versiones__estado" role="status"><IconReloj size={24} aria-hidden="true" /><strong>Cargando versiones...</strong><p>Estamos consultando el historial del documento.</p></div>
+          ) : error ? (
+            <div className="historial-versiones__estado historial-versiones__estado--error" role="alert">
+              <IconAlerta size={24} aria-hidden="true" /><strong>No pudimos cargar el historial</strong><p>{error}</p>
+              <Button onClick={onReintentar}>Reintentar</Button>
+            </div>
+          ) : versiones.length === 0 ? (
+            <div className="historial-versiones__estado" role="status"><IconDocumento size={24} aria-hidden="true" /><strong>No hay versiones registradas.</strong><p>Las versiones de este documento aparecerán aquí cuando estén disponibles.</p></div>
+          ) : <>
+            <p className="historial-versiones__total">{versiones.length} {versiones.length === 1 ? 'versión registrada' : 'versiones registradas'}</p>
+            <ul className="historial-versiones__lista" aria-label="Versiones registradas">
+              {versiones.map((version) => (
+                <li key={version.version_id || version.id} className={`historial-versiones__item ${version.vigente ? 'historial-versiones__item--vigente' : ''}`}>
+                  <span className="historial-versiones__numero">v{version.numero}</span>
+                  <div className="historial-versiones__datos">
+                    <strong>{version.nombre}</strong>
+                    <span className="historial-versiones__fecha"><IconReloj size={13} aria-hidden="true" />{fechaCompleta(version.fecha)}</span>
+                  </div>
+                  <div className="historial-versiones__detalle">
+                    {version.vigente && <span className="historial-versiones__vigente"><span aria-hidden="true" />Vigente</span>}
+                    <span className="historial-versiones__fragmentos"><strong>{version.chunks_indexados ?? '—'}</strong> fragmentos indexados</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </>}
+        </div>
+      </>}
+    </ModalShell>
   )
 }

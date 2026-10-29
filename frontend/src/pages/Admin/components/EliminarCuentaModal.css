@@ -1,0 +1,9 @@
+.docai-modal.cuenta-eliminar, .docai-modal.cuenta-eliminada { width: min(580px, calc(100vw - 48px)); }
+.cuenta-eliminar .docai-modal__icon { border-color: #ecd6cc; background: #fdf1ed; color: #ab3515; }
+.cuenta-eliminar__identidad { display: flex; flex-direction: column; gap: 5px; margin-bottom: 18px; padding: 14px 16px; border: 1px solid #e5e7e3; border-radius: 10px; background: #f8f9f6; overflow-wrap: anywhere; }
+.cuenta-eliminar__identidad strong { font-size: 14px; font-weight: 500; line-height: 1.6; }
+.cuenta-eliminar__identidad > span { color: #626b65; font-size: 12px; line-height: 1.6; }
+.cuenta-eliminar__alcance { margin: 0; padding: 12px 14px; border: 1px solid #ecd6cc; border-radius: 8px; background: #fdf3ee; color: #923e28; font-size: 14px; line-height: 1.7; }
+.cuenta-eliminar__estado { margin: 16px 0 0; color: #626b65; font-size: 12px; }
+.cuenta-eliminar__error { margin: 16px 0 0; padding: 12px 14px; border: 1px solid #efd8d0; border-radius: 8px; background: #fff5ef; color: #923e28; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.cuenta-eliminar__resultado { margin: 0; color: #626b65; font-size: 14px; line-height: 1.7; }

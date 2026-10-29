@@ -1,0 +1,25 @@
+.docai-modal.documento-carga-modal { width: min(600px, calc(100vw - 48px)); }
+.documento-carga__introduccion { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 4px 12px 24px; }
+.documento-carga__ilustracion { display: grid; place-items: center; width: 64px; height: 64px; border: 1px solid #dce8df; border-radius: 18px; background: #edf5f1; color: #2f6b63; }
+.documento-carga__introduccion strong { font-size: 16px; font-weight: 600; }
+.documento-carga__introduccion p, .documento-carga__nota { margin: 0; color: #626b65; font-size: 13px; line-height: 1.65; }
+.documento-carga__reglas { padding: 16px; border: 1px solid #e5e7e3; border-radius: 10px; background: #f8f9f6; }
+.documento-carga__limite { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 12px; }
+.documento-carga__limite strong { font-weight: 600; }
+.documento-carga__limite > span { color: #626b65; }
+.documento-carga__reglas ul { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 12px 0 0; padding: 0; }
+.documento-carga__reglas li { padding: 4px 8px; border: 1px solid #e0e5dd; border-radius: 6px; background: #fff; color: #58645b; font-size: 10px; font-weight: 600; }
+.documento-carga__actual { display: flex; align-items: center; gap: 12px; padding: 14px 16px; margin-bottom: 22px; border: 1px solid #e5e7e3; border-radius: 10px; }
+.documento-carga__archivo-icono { display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 40px; border-radius: 9px; background: #edf3ee; color: #2f6b63; }
+.documento-carga__actual > div { min-width: 0; }
+.documento-carga__actual strong { display: block; font-size: 13px; font-weight: 500; overflow-wrap: anywhere; line-height: 1.5; }
+.documento-carga__actual div > span { display: block; color: #626b65; font-size: 11px; margin-top: 4px; }
+.documento-carga-modal input[type="file"] { box-sizing: border-box; width: 100%; padding: 10px; margin: 0 0 16px; border: 1px solid #dce2d9; border-radius: 8px; background: #fff; color: #626b65; font: inherit; font-size: 12px; }
+.documento-carga-modal input[type="file"]::file-selector-button { border: 1px solid #dce2d9; border-radius: 6px; padding: 8px 10px; margin-right: 12px; background: #f5f7f2; color: #2f6b63; font: inherit; font-weight: 500; cursor: pointer; }
+.documento-carga-modal input[type="file"]:disabled { opacity: .6; }
+.documento-carga-modal input[aria-invalid="true"] { border-color: #c56b51; }
+.documento-carga__nota { margin-top: 16px; }
+.documento-carga__error { margin: 16px 0 0; padding: 12px 14px; border: 1px solid #efd8d0; border-radius: 8px; background: #fff5ef; color: #923e28; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+
+/* El diálogo muestra la misma carga con cancelación accesible en su interior. */
+body:has(.documento-carga-modal--version[open]) .progreso-carga:not(.progreso-carga--inline) { display: none; }

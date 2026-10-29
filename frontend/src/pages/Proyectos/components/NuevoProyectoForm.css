@@ -1,0 +1,55 @@
+.proyecto-form__nota {
+  margin: 0 0 18px;
+  color: var(--docai-pilot-muted, #626b65);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.proyecto-form__campos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  gap: 20px;
+  border: 0;
+}
+
+.proyecto-form__full {
+  grid-column: 1 / -1;
+}
+
+.proyecto-form__seccion {
+  grid-column: 1 / -1;
+  margin: 2px 0 -3px;
+  padding-top: 16px;
+  border-top: 1px solid #edf0eb;
+  color: var(--docai-pilot-muted, #626b65);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.proyecto-form__error {
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border: 1px solid #edcfc3;
+  border-radius: 9px;
+  background: #fdf3ee;
+  color: #993c21;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.proyecto-form__procesando {
+  margin-right: auto;
+  color: var(--docai-pilot-muted, #626b65);
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .proyecto-form__campos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,0 +1,205 @@
+.documentos-listado {
+  border: 1px solid var(--docai-pilot-border, #e5e7e3);
+  border-radius: var(--docai-radius-card, 14px);
+  background: var(--docai-pilot-surface, #fff);
+  overflow: hidden;
+  color: var(--docai-pilot-ink, #252c29);
+}
+
+.documentos-listado__scroll {
+  overflow-x: auto;
+}
+
+.documentos-listado__scroll:focus-visible {
+  outline: 2px solid var(--docai-pilot-accent, #2f6b63);
+  outline-offset: -2px;
+}
+
+.documentos-listado__tabla {
+  width: 100%;
+  min-width: 800px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  text-align: left;
+  font-family: inherit;
+}
+
+.documentos-listado__col-fragmentos { width: 90px; }
+.documentos-listado__col-estado { width: 108px; }
+.documentos-listado__col-fecha { width: 122px; }
+.documentos-listado__col-acciones { width: 260px; }
+
+.documentos-listado__tabla thead {
+  background: #f7f8f5;
+  color: var(--docai-pilot-muted, #626b65);
+}
+
+.documentos-listado__tabla th,
+.documentos-listado__tabla td {
+  padding: 17px 12px;
+  border-bottom: 1px solid var(--docai-pilot-border, #e5e7e3);
+  vertical-align: middle;
+}
+
+.documentos-listado__tabla thead th {
+  padding-top: 14px;
+  padding-bottom: 14px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.documentos-listado__tabla th:first-child,
+.documentos-listado__tabla td:first-child { padding-left: 20px; }
+.documentos-listado__tabla th:last-child,
+.documentos-listado__tabla td:last-child { padding-right: 20px; }
+.documentos-listado__tabla tbody tr:last-child > * { border-bottom: 0; }
+
+.documentos-listado__fila:hover,
+.documentos-listado__fila:focus-within { background: #fafbf8; }
+
+.documentos-listado__documento {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.documentos-listado__archivo-icono {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 40px;
+  flex-shrink: 0;
+  border: 1px solid #e1e9e2;
+  border-radius: 9px;
+  background: #edf3ee;
+  color: var(--docai-pilot-accent, #2f6b63);
+}
+
+.documentos-listado__archivo-info { min-width: 0; }
+.documentos-listado__nombre {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.documentos-listado__version {
+  display: block;
+  margin-top: 3px;
+  color: var(--docai-pilot-muted, #626b65);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.documentos-listado__fragmentos {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.documentos-listado__fecha {
+  color: var(--docai-pilot-muted, #626b65);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.documentos-listado__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid #d8e9df;
+  border-radius: 999px;
+  background: #edf5f1;
+  color: #2f6b63;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.documentos-listado__badge > span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.documentos-listado__badge--pendiente {
+  border-color: #efe1bc;
+  background: #fff8e9;
+  color: #805d18;
+}
+
+.documentos-listado__acciones-titulo { text-align: right; }
+.documentos-listado__acciones {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+}
+
+.documentos-listado__acciones .docai-button {
+  min-height: 34px;
+  padding: 7px 8px;
+  gap: 5px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.documentos-listado__acciones .docai-button svg { flex-shrink: 0; }
+.documentos-listado__acciones .documentos-listado__eliminar {
+  min-width: 34px;
+  border-color: transparent;
+  color: #7a625b;
+  background: transparent;
+}
+
+.documentos-listado__acciones .documentos-listado__eliminar:hover:enabled {
+  border-color: #efd8d0;
+  background: #fff2ed;
+  color: #ab3515;
+}
+
+.documentos-listado__estado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 36px 20px;
+  text-align: center;
+}
+
+.documentos-listado__estado-icono {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #f1f3ee;
+  color: var(--docai-pilot-muted, #626b65);
+}
+
+.documentos-listado__estado--error .documentos-listado__estado-icono {
+  background: #fff8e9;
+  color: #805d18;
+}
+
+.documentos-listado__estado strong { font-size: 15px; font-weight: 600; }
+.documentos-listado__estado p {
+  max-width: 480px;
+  margin: 0;
+  color: var(--docai-pilot-muted, #626b65);
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.documentos-listado__footer {
+  padding: 13px 20px;
+  border-top: 1px solid var(--docai-pilot-border, #e5e7e3);
+  color: var(--docai-pilot-muted, #626b65);
+  font-size: 12px;
+}

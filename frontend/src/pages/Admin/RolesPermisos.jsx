@@ -11,6 +11,9 @@ import {
   IconUsuarios,
   IconCarpeta,
 } from '../../components/icons'
+import PageHeader from '../../components/ui/PageHeader'
+import SurfaceCard from '../../components/ui/SurfaceCard'
+import Button from '../../components/ui/Button'
 import './RolesPermisos.css'
 
 const ROLES_GLOBALES = [
@@ -100,11 +103,12 @@ const IconChevronDown = (p) => (
   </svg>
 )
 
-function Toggle({ checked, onChange, disabled }) {
+function Toggle({ checked, onChange, disabled, label }) {
   return (
     <button
       type="button"
       role="switch"
+      aria-label={label}
       aria-checked={checked}
       disabled={disabled}
       className={`roles__toggle ${checked ? 'roles__toggle--on' : ''}`}
@@ -298,21 +302,16 @@ export default function RolesPermisos() {
   }
 
   return (
-    <div className="roles">
-      <div className="roles__header">
-        <h1 className="roles__titulo">Roles y Permisos</h1>
-        <p className="roles__subtitulo">
-          {tab === 'globales'
-            ? 'Configura qué puede ver y hacer cada rol, tanto a nivel global como dentro de cada proyecto.'
-            : 'Gestiona las políticas de acceso delegadas y permisos específicos por proyecto activo.'}
-        </p>
-      </div>
+    <div className="roles roles--modern" data-docai-layout="modern">
+      <PageHeader title="Roles y permisos" description={tab === 'globales'
+        ? 'Configura qué puede ver y hacer cada rol, tanto a nivel global como dentro de cada proyecto.'
+        : 'Gestiona las políticas de acceso delegadas y permisos específicos por proyecto activo.'} />
 
-      <nav className="roles__tabs">
+      <nav className="roles__tabs" aria-label="Ámbito de permisos">
         <button
           type="button"
           className={`roles__tab ${tab === 'globales' ? 'roles__tab--activo' : ''}`}
-          onClick={() => setTab('globales')}
+          aria-pressed={tab === 'globales'} onClick={() => setTab('globales')}
         >
           <IconEscudo />
           Permisos Globales
@@ -320,7 +319,7 @@ export default function RolesPermisos() {
         <button
           type="button"
           className={`roles__tab ${tab === 'proyecto' ? 'roles__tab--activo' : ''}`}
-          onClick={() => setTab('proyecto')}
+          aria-pressed={tab === 'proyecto'} onClick={() => setTab('proyecto')}
         >
           <IconCarpetaCheck />
           Permisos por Proyecto
@@ -338,7 +337,7 @@ export default function RolesPermisos() {
                 key={r.clave}
                 type="button"
                 className={`roles__rol-tab ${rolGlobal === r.clave ? 'roles__rol-tab--activo' : ''}`}
-                onClick={() => setRolGlobal(r.clave)}
+                aria-pressed={rolGlobal === r.clave} onClick={() => setRolGlobal(r.clave)}
               >
                 <IconNavRoles size={14} />
                 {r.etiqueta}
@@ -364,7 +363,7 @@ export default function RolesPermisos() {
             </div>
           </div>
 
-          <div className="roles__matriz">
+          <SurfaceCard className="roles__matriz">
             <div className="roles__matriz-header">
               <IconGrid />
               <h2>Matriz de Acceso por Módulo</h2>
@@ -406,28 +405,28 @@ export default function RolesPermisos() {
                           </td>
                           <td>
                             <Toggle
-                              checked={m.ver}
+                              label={`Ver · ${m.nombre}`} checked={m.ver}
                               disabled={bloqueadoGlobal}
                               onChange={(v) => actualizarModulo(m.clave, 'ver', v)}
                             />
                           </td>
                           <td>
                             <Toggle
-                              checked={m.crear}
+                              label={`Crear · ${m.nombre}`} checked={m.crear}
                               disabled={bloqueadoGlobal || !m.ver}
                               onChange={(v) => actualizarModulo(m.clave, 'crear', v)}
                             />
                           </td>
                           <td>
                             <Toggle
-                              checked={m.editar}
+                              label={`Editar · ${m.nombre}`} checked={m.editar}
                               disabled={bloqueadoGlobal || !m.ver}
                               onChange={(v) => actualizarModulo(m.clave, 'editar', v)}
                             />
                           </td>
                           <td>
                             <Toggle
-                              checked={m.eliminar}
+                              label={`Eliminar · ${m.nombre}`} checked={m.eliminar}
                               disabled={bloqueadoGlobal || !m.ver}
                               onChange={(v) => actualizarModulo(m.clave, 'eliminar', v)}
                             />
@@ -448,21 +447,21 @@ export default function RolesPermisos() {
                 ÚLTIMA SINCRONIZACIÓN: {formatSincronizacion(syncGlobal)}
               </span>
               <div className="roles__pie-acciones">
-                <button type="button" className="roles__btn-texto" disabled={!huboCambiosGlobal} onClick={descartarGlobal}>
+                <Button type="button" disabled={!huboCambiosGlobal} onClick={descartarGlobal}>
                   Descartar cambios
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className="roles__btn-guardar"
+                  variant="primary"
                   disabled={bloqueadoGlobal || !huboCambiosGlobal || guardandoGlobal}
                   onClick={guardarGlobal}
                 >
                   <IconGuardar />
                   {guardandoGlobal ? 'Guardando...' : 'Guardar cambios'}
-                </button>
+                </Button>
               </div>
             </div>
-          </div>
+          </SurfaceCard>
         </>
       ) : cargandoProyectos ? (
         <div className="roles__vacio">Cargando proyectos...</div>
@@ -474,7 +473,7 @@ export default function RolesPermisos() {
             <span className="roles__label">PROYECTO SELECCIONADO:</span>
             <div className="roles__proyecto-selector">
               <div className="roles__select-wrap">
-                <select value={proyectoId ?? ''} onChange={(e) => setProyectoId(Number(e.target.value))}>
+                <select aria-label="Proyecto seleccionado" value={proyectoId ?? ''} onChange={(e) => setProyectoId(Number(e.target.value))}>
                   {proyectos.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.nombre} (#{p.codigo}) — {p.descripcion || 'Sin descripción'}
@@ -522,7 +521,7 @@ export default function RolesPermisos() {
             </div>
           </div>
 
-          <div className="roles__matriz">
+          <SurfaceCard className="roles__matriz">
             <div className="roles__matriz-header roles__matriz-header--proyecto">
               <div className="roles__subtabs">
                 <button
@@ -595,29 +594,29 @@ export default function RolesPermisos() {
                           </div>
                         </td>
                         <td>
-                          <Toggle checked={m.ver} onChange={(v) => actualizarMiembro(m.usuario_id, 'ver', v)} />
+                          <Toggle label={`Ver · ${m.nombre}`} checked={m.ver} onChange={(v) => actualizarMiembro(m.usuario_id, 'ver', v)} />
                         </td>
                         <td>
                           <Toggle
-                            checked={m.subir_crear}
+                            label={`Subir / Crear · ${m.nombre}`} checked={m.subir_crear}
                             onChange={(v) => actualizarMiembro(m.usuario_id, 'subir_crear', v)}
                           />
                         </td>
                         <td>
                           <Toggle
-                            checked={m.editar_anotar}
+                            label={`Editar / Anotar · ${m.nombre}`} checked={m.editar_anotar}
                             onChange={(v) => actualizarMiembro(m.usuario_id, 'editar_anotar', v)}
                           />
                         </td>
                         <td>
                           <Toggle
-                            checked={m.descargar}
+                            label={`Descargar · ${m.nombre}`} checked={m.descargar}
                             onChange={(v) => actualizarMiembro(m.usuario_id, 'descargar', v)}
                           />
                         </td>
                         <td>
                           <Toggle
-                            checked={m.consulta_ia}
+                            label={`Consulta IA · ${m.nombre}`} checked={m.consulta_ia}
                             onChange={(v) => actualizarMiembro(m.usuario_id, 'consulta_ia', v)}
                           />
                         </td>
@@ -625,6 +624,7 @@ export default function RolesPermisos() {
                           <input
                             type="text"
                             className="roles__nota-input"
+                            aria-label={`Nota · ${m.nombre}`}
                             placeholder="Agregar regla o nota..."
                             value={m.nota ?? ''}
                             onChange={(e) => actualizarMiembro(m.usuario_id, 'nota', e.target.value)}
@@ -642,26 +642,25 @@ export default function RolesPermisos() {
                 ÚLTIMA SINCRONIZACIÓN LOCAL: {formatSincronizacion(syncProyecto)}
               </span>
               <div className="roles__pie-acciones">
-                <button
+                <Button
                   type="button"
-                  className="roles__btn-texto"
                   disabled={!huboCambiosProyecto}
                   onClick={descartarProyecto}
                 >
                   Descartar cambios
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className="roles__btn-guardar"
+                  variant="primary"
                   disabled={!huboCambiosProyecto || guardandoProyecto}
                   onClick={guardarProyecto}
                 >
                   <IconGuardar />
                   {guardandoProyecto ? 'Guardando...' : `Guardar cambios en ${proyectoActivo?.nombre ?? ''}`}
-                </button>
+                </Button>
               </div>
             </div>
-          </div>
+          </SurfaceCard>
         </>
       )}
     </div>

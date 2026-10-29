@@ -1,0 +1,4 @@
+.usuarios-acciones-menu { position: fixed; z-index: 200; display: flex; flex-direction: column; min-width: 160px; padding: 6px; border: 1px solid #e5e7e3; border-radius: 10px; background: #fff; box-shadow: 0 8px 28px rgba(30,42,35,.12); font-family: var(--fuente-texto, 'Albert Sans', sans-serif); }
+.usuarios-acciones-menu .docai-button { justify-content: flex-start; min-height: 36px; border: 0; padding: 8px 10px; font-size: 13px; }
+.usuarios-acciones-menu .usuarios-acciones-menu__peligro { color: #ab3515; }
+.usuarios-acciones-menu .docai-button:focus-visible { outline: 2px solid #2f6b63; outline-offset: -2px; }

@@ -1,47 +1,21 @@
-import { useEffect, useMemo, useState } from 'react'
-import { getInitials, getAvatarColors } from '../../utils/avatarUtils'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { actorHeaders } from '../../utils/actor'
-import { IconUsuarios, IconCarpeta, IconBuscar } from '../../components/icons'
+import { IconUsuarios, IconCarpeta, IconBuscar, IconCheckCirculo, IconRoles } from '../../components/icons'
+import PageHeader from '../../components/ui/PageHeader'
+import Button from '../../components/ui/Button'
+import SurfaceCard from '../../components/ui/SurfaceCard'
+import UsuariosTabla from './components/UsuariosTabla'
+import UsuarioFormulario from './components/UsuarioFormulario'
+import InvitarUsuarioFormulario from './components/InvitarUsuarioFormulario'
+import InvitacionResultado from './components/InvitacionResultado'
+import MiembroAccionModal, { MiembroEliminadoResultado } from './components/MiembroAccionModal'
+import EliminarCuentaModal, { CuentaEliminadaResultado } from './components/EliminarCuentaModal'
+import UsuariosAccionesMenu from './components/UsuariosAccionesMenu'
+import ProyectoEstadoBadge from '../Proyectos/components/ProyectoEstadoBadge'
 import './Usuarios.css'
 
 const VACIO = { nombre: '', correo: '', contrasena: '', rol: 'Colaborador' }
 const POR_PAGINA = 8
-
-function formatFecha(iso) {
-  if (!iso) return 'Nunca'
-  const fecha = new Date(iso)
-  if (Number.isNaN(fecha.getTime())) return 'Nunca'
-  return fecha.toLocaleString('es-PE', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-function formatFechaCorta(iso) {
-  if (!iso) return '—'
-  const fecha = new Date(iso)
-  if (Number.isNaN(fecha.getTime())) return '—'
-  return fecha.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', '')
-}
-
-function badgeRolSistema(rol) {
-  if (rol === 'Administrador') return { label: rol, className: 'usuarios__rol-badge usuarios__rol-badge--admin' }
-  if (rol === 'Jefe de Proyecto') return { label: rol, className: 'usuarios__rol-badge usuarios__rol-badge--jefe' }
-  return { label: rol, className: 'usuarios__rol-badge' }
-}
-
-function badgeRolProyecto(rolProyecto) {
-  if (rolProyecto === 'RESPONSABLE') {
-    return {
-      label: 'Responsable del Proyecto',
-      className: 'usuarios__rol-proyecto-badge usuarios__rol-proyecto-badge--responsable',
-    }
-  }
-  return { label: 'Colaborador del Proyecto', className: 'usuarios__rol-proyecto-badge' }
-}
 
 function esInvitacionPendiente(miembro) {
   return miembro.estado_invitacion === 'PENDIENTE'
@@ -65,13 +39,6 @@ const IconChevronDown = (p) => (
   </svg>
 )
 
-const IconPuntos = (p) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...p}>
-    <circle cx="12" cy="5" r="1.2" />
-    <circle cx="12" cy="12" r="1.2" />
-    <circle cx="12" cy="19" r="1.2" />
-  </svg>
-)
 
 const IconMas = (p) => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" {...p}>
@@ -80,36 +47,37 @@ const IconMas = (p) => (
   </svg>
 )
 
-const IconCheck = (p) => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" {...p}>
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-)
 
-const IconAlerta = (p) => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" {...p}>
-    <path d="M12 9v4" />
-    <path d="M12 17h.01" />
-    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
-  </svg>
-)
 
 export default function Usuarios({ sesion }) {
   const [usuarios, setUsuarios] = useState([])
   const [cargando, setCargando] = useState(true)
+  const [errorCargaUsuarios, setErrorCargaUsuarios] = useState('')
+  const [errorCargaProyectos, setErrorCargaProyectos] = useState('')
   const [formulario, setFormulario] = useState(null)
-  const [error, setError] = useState('')
-  const [menuAbiertoId, setMenuAbiertoId] = useState(null)
+  const [guardandoUsuario, setGuardandoUsuario] = useState(false)
+  const [errorFormulario, setErrorFormulario] = useState('')
+  const formularioOrigenRef = useRef(null)
   const [invitacion, setInvitacion] = useState(null)
 
   const [proyectos, setProyectos] = useState([])
   const [cargandoProyectos, setCargandoProyectos] = useState(true)
   const [invitarA, setInvitarA] = useState(null)
+  const [enviandoInvitacion, setEnviandoInvitacion] = useState(false)
+  const [errorInvitacion, setErrorInvitacion] = useState('')
+  const invitacionOrigenRef = useRef(null)
   const [proyectoSeleccionadoId, setProyectoSeleccionadoId] = useState(null)
   const [accionMiembro, setAccionMiembro] = useState(null)
-  const [menuMiembroAbiertoId, setMenuMiembroAbiertoId] = useState(null)
+  const [procesandoMiembro, setProcesandoMiembro] = useState(false)
+  const [errorAccionMiembro, setErrorAccionMiembro] = useState('')
+  const accionMiembroOrigenRef = useRef(null)
+  const selectorProyectoRef = useRef(null)
   const [miembroEliminado, setMiembroEliminado] = useState(null)
   const [usuarioAEliminar, setUsuarioAEliminar] = useState(null)
+  const [eliminandoUsuario, setEliminandoUsuario] = useState(false)
+  const [errorEliminarUsuario, setErrorEliminarUsuario] = useState('')
+  const eliminarUsuarioOrigenRef = useRef(null)
+  const buscarUsuariosRef = useRef(null)
   const [usuarioEliminado, setUsuarioEliminado] = useState(null)
 
   const puedeEliminar = sesion?.rol === 'Administrador' || sesion?.rol === 'Jefe de Proyecto'
@@ -126,6 +94,7 @@ export default function Usuarios({ sesion }) {
   const cargar = async () => {
     const lista = await pedir('/usuarios')
     setUsuarios(lista)
+    setErrorCargaUsuarios('')
   }
 
   const cargarProyectos = async () => {
@@ -133,15 +102,29 @@ export default function Usuarios({ sesion }) {
     if (esJefeDeProyecto && sesion?.id) params.append('responsable_id', sesion.id)
     const respuesta = await pedir(`/proyectos/detalles?${params.toString()}`)
     setProyectos(respuesta.items)
+    setErrorCargaProyectos('')
+  }
+
+  const reintentarUsuarios = async () => {
+    setCargando(true)
+    setErrorCargaUsuarios('')
+    try { await cargar() } catch (err) { setErrorCargaUsuarios(err.message) }
+    finally { setCargando(false) }
+  }
+  const reintentarProyectos = async () => {
+    setCargandoProyectos(true)
+    setErrorCargaProyectos('')
+    try { await cargarProyectos() } catch (err) { setErrorCargaProyectos(err.message) }
+    finally { setCargandoProyectos(false) }
   }
 
   useEffect(() => {
     cargar()
-      .catch((err) => setError(err.message))
+      .catch((err) => setErrorCargaUsuarios(err.message))
       .finally(() => setCargando(false))
 
     cargarProyectos()
-      .catch((err) => setError(err.message))
+      .catch((err) => setErrorCargaProyectos(err.message))
       .finally(() => setCargandoProyectos(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -209,156 +192,170 @@ export default function Usuarios({ sesion }) {
     [usuarios]
   )
 
+  const abrirFormulario = (datosFormulario, origen = document.activeElement) => {
+    formularioOrigenRef.current = origen
+    setErrorFormulario('')
+    setFormulario(datosFormulario)
+  }
+
   const guardar = async (e) => {
     e.preventDefault()
-    setError('')
+    if (!formulario || guardandoUsuario) return
+    setGuardandoUsuario(true)
+    setErrorFormulario('')
     const datos = formulario.datos
-
+    let guardado = false
     try {
+      let invitacionCreada = null
       if (formulario.modo === 'crear') {
         const creado = await pedir('/usuarios', {
           method: 'POST',
-          body: JSON.stringify({
-            nombre: datos.nombre,
-            correo: datos.correo,
-            contrasena: datos.contrasena,
-            rol: datos.rol,
-          }),
+          body: JSON.stringify({ nombre: datos.nombre, correo: datos.correo, contrasena: datos.contrasena, rol: datos.rol }),
         })
-        setInvitacion({ tipo: 'usuario', correo: creado.correo, enviada: creado.invitacion_enviada })
+        invitacionCreada = { tipo: 'usuario', correo: creado.correo, enviada: creado.invitacion_enviada }
       } else {
         await pedir(`/usuarios/${formulario.id}`, {
           method: 'PUT',
-          body: JSON.stringify({
-            nombre: datos.nombre,
-            correo: datos.correo,
-            rol: datos.rol,
-          }),
+          body: JSON.stringify({ nombre: datos.nombre, correo: datos.correo, rol: datos.rol }),
         })
       }
-      await cargar()
       setFormulario(null)
+      if (invitacionCreada) setInvitacion(invitacionCreada)
+      guardado = true
     } catch (err) {
-      setError(err.message)
+      setErrorFormulario(err.message)
+    } finally {
+      setGuardandoUsuario(false)
+    }
+    // Una lectura fallida tras guardar no debe provocar una segunda creación.
+    if (guardado) {
+      try { await cargar() } catch (err) { setErrorCargaUsuarios(err.message) }
     }
   }
 
   const invitarMiembro = async (e) => {
     e.preventDefault()
-    setError('')
+    if (!invitarA || enviandoInvitacion || !invitarA.usuarioId) return
+    setErrorInvitacion('')
+    setEnviandoInvitacion(true)
+    let registrada = false
     try {
       const creado = await pedir(`/proyectos/${invitarA.proyecto.id}/usuarios`, {
         method: 'POST',
-        body: JSON.stringify({
-          usuario_id: Number(invitarA.usuarioId),
-          rol_proyecto: invitarA.rolProyecto,
-          cargo: invitarA.cargo || null,
-        }),
+        body: JSON.stringify({ usuario_id: Number(invitarA.usuarioId), rol_proyecto: invitarA.rolProyecto, cargo: invitarA.cargo || null }),
       })
       setInvitarA(null)
       setInvitacion({ tipo: 'proyecto', correo: creado.correo, enviada: creado.invitacion_enviada })
-      await cargarProyectos()
+      registrada = true
     } catch (err) {
-      setError(err.message)
+      setErrorInvitacion(err.message)
+    } finally {
+      setEnviandoInvitacion(false)
+    }
+    if (registrada) {
+      try { await cargarProyectos() } catch (err) { setErrorCargaProyectos(err.message) }
     }
   }
 
   const confirmarEliminarUsuario = async () => {
-    setError('')
+    if (!usuarioAEliminar || eliminandoUsuario) return
+    setErrorEliminarUsuario('')
+    setEliminandoUsuario(true)
+    let eliminado = false
     try {
       await pedir(`/usuarios/${usuarioAEliminar.id}`, { method: 'DELETE' })
-      setUsuarioAEliminar(null)
-      await cargar()
       setUsuarioEliminado(usuarioAEliminar)
+      setUsuarioAEliminar(null)
+      eliminado = true
     } catch (err) {
-      setError(err.message)
+      setErrorEliminarUsuario(err.message)
+    } finally {
+      setEliminandoUsuario(false)
+    }
+    if (eliminado) {
+      await Promise.all([
+        cargar().catch((err) => setErrorCargaUsuarios(err.message)),
+        cargarProyectos().catch((err) => setErrorCargaProyectos(err.message)),
+      ])
     }
   }
 
   const confirmarAccionMiembro = async () => {
-    setError('')
+    if (!accionMiembro || procesandoMiembro) return
+    setErrorAccionMiembro('')
+    setProcesandoMiembro(true)
+    let completada = false
     try {
-      const { proyectoId, usuario, tipo } = accionMiembro
+      const { proyectoId, usuario, tipo, proyectoNombre } = accionMiembro
       if (tipo === 'cancelar' || tipo === 'eliminar') {
         await pedir(`/proyectos/${proyectoId}/usuarios/${usuario.id}`, { method: 'DELETE' })
       } else {
         await pedir(`/proyectos/${proyectoId}/usuarios/${usuario.id}/estado`, {
-          method: 'PATCH',
-          body: JSON.stringify({ activo: tipo === 'habilitar' }),
+          method: 'PATCH', body: JSON.stringify({ activo: tipo === 'habilitar' }),
         })
       }
       setAccionMiembro(null)
-      await cargarProyectos()
-      if (tipo === 'eliminar') {
-        setMiembroEliminado(usuario)
-      }
+      if (tipo === 'eliminar') setMiembroEliminado({ ...usuario, proyectoNombre })
+      completada = true
     } catch (err) {
-      setError(err.message)
+      setErrorAccionMiembro(err.message)
+    } finally {
+      setProcesandoMiembro(false)
+    }
+    if (completada) {
+      try { await cargarProyectos() } catch (err) { setErrorCargaProyectos(err.message) }
     }
   }
 
-  const renderAvatar = (usuario, inhabilitado = false) => {
-    if (inhabilitado) {
-      return (
-        <span className="usuarios__avatar usuarios__avatar--inhabilitado">{getInitials(usuario.nombre)}</span>
-      )
+  const accionesUsuario = (usuario) => <UsuariosAccionesMenu nombre={usuario.nombre} acciones={[
+    { label: 'Editar', onClick: (origen) => abrirFormulario({ modo: 'editar', id: usuario.id, datos: { nombre: usuario.nombre, correo: usuario.correo, contrasena: '', rol: usuario.rol } }, origen) },
+    ...(puedeEliminar ? [{ label: 'Eliminar', peligro: true, onClick: (origen) => { eliminarUsuarioOrigenRef.current = origen; setErrorEliminarUsuario(''); setUsuarioAEliminar(usuario) } }] : []),
+  ]} />
+
+  const accionesMiembro = (miembro) => {
+    const pendiente = esInvitacionPendiente(miembro)
+    const inhabilitado = !pendiente && miembro.activo === false
+    const abrir = (tipo, origen) => {
+      accionMiembroOrigenRef.current = origen
+      setErrorAccionMiembro('')
+      setAccionMiembro({ proyectoId: proyectoActivo.id, proyectoNombre: proyectoActivo.nombre, usuario: miembro, tipo })
     }
-    if (usuario.rol === 'Administrador') {
-      return (
-        <span className="usuarios__avatar usuarios__avatar--admin">{getInitials(usuario.nombre)}</span>
-      )
-    }
-    const { background, color } = getAvatarColors(usuario.nombre)
-    return (
-      <span className="usuarios__avatar" style={{ backgroundColor: background, color }}>
-        {getInitials(usuario.nombre)}
-      </span>
-    )
+    return puedeEliminar && !pendiente ? <UsuariosAccionesMenu nombre={miembro.nombre} acciones={[
+      { label: inhabilitado ? 'Habilitar' : 'Inhabilitar', onClick: (origen) => abrir(inhabilitado ? 'habilitar' : 'inhabilitar', origen) },
+      { label: 'Eliminar', peligro: true, onClick: (origen) => abrir('eliminar', origen) },
+    ]} /> : <Button className="usuarios__btn-texto" onClick={(e) => abrir(pendiente ? 'cancelar' : inhabilitado ? 'habilitar' : 'inhabilitar', e.currentTarget)}>{pendiente ? 'Cancelar invitación' : inhabilitado ? 'Habilitar' : 'Inhabilitar'}</Button>
   }
 
   return (
-    <div className="usuarios">
-      <div className="usuarios__header">
-        <div>
-          <h1 className="usuarios__titulo">Gestión de Usuarios</h1>
-          <p className="usuarios__subtitulo">
-            Administra las cuentas, roles y accesos de todos los usuarios de DocAI.
-          </p>
-        </div>
-        <button
-          type="button"
-          className="usuarios__btn-nuevo"
-          onClick={() => setFormulario({ modo: 'crear', datos: { ...VACIO } })}
-        >
-          <IconMas />
-          Nuevo Usuario
-        </button>
-      </div>
+    <div className="usuarios usuarios--modern" data-docai-layout="modern">
+      <PageHeader title="Gestión de Usuarios" description="Administra las cuentas, roles y accesos de todos los usuarios de DocAI."
+        actions={<Button variant="primary" onClick={() => abrirFormulario({ modo: 'crear', datos: { ...VACIO } })}><IconMas />Nuevo Usuario</Button>} />
 
-      <nav className="usuarios__tabs">
-        <button
+      <nav className="usuarios__tabs" aria-label="Vistas de usuarios">
+        <Button
           type="button"
-          className={`usuarios__tab ${tab === 'todos' ? 'usuarios__tab--activo' : ''}`}
+          aria-pressed={tab === 'todos'} className={`usuarios__tab ${tab === 'todos' ? 'usuarios__tab--activo' : ''}`}
           onClick={() => setTab('todos')}
         >
           <IconUsuarios size={16} />
           Todos los Usuarios
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className={`usuarios__tab ${tab === 'proyecto' ? 'usuarios__tab--activo' : ''}`}
+          aria-pressed={tab === 'proyecto'} className={`usuarios__tab ${tab === 'proyecto' ? 'usuarios__tab--activo' : ''}`}
           onClick={() => setTab('proyecto')}
         >
           <IconCarpeta size={16} />
           Por Proyecto
-        </button>
+        </Button>
       </nav>
 
-      {error && <div className="usuarios__error">{error}</div>}
 
       {tab === 'proyecto' ? (
         cargandoProyectos ? (
           <div className="usuarios__vacio">Cargando proyectos...</div>
+        ) : errorCargaProyectos ? (
+          <div className="usuarios__vacio" role="alert"><p>{errorCargaProyectos}</p><Button onClick={reintentarProyectos}>Reintentar</Button></div>
         ) : proyectos.length === 0 ? (
           <div className="usuarios__vacio">Todavía no hay proyectos creados.</div>
         ) : (
@@ -369,11 +366,13 @@ export default function Usuarios({ sesion }) {
                   <span className="usuarios__pp-eyebrow">VISTA DE ASIGNACIONES</span>
                   <h2 className="usuarios__pp-titulo">Miembros del proyecto</h2>
                 </div>
-                <button
+                <Button
                   type="button"
-                  className="usuarios__btn-nuevo"
+                  variant="primary" className="usuarios__btn-nuevo"
                   disabled={!proyectoActivo}
                   onClick={() => {
+                    invitacionOrigenRef.current = document.activeElement
+                    setErrorInvitacion('')
                     const idsMiembros = new Set(proyectoActivo.miembros.map((m) => m.id))
                     const disponibles = usuarios.filter((u) => !idsMiembros.has(u.id))
                     setInvitarA({
@@ -387,7 +386,7 @@ export default function Usuarios({ sesion }) {
                 >
                   <IconMas />
                   Agregar usuario a este proyecto
-                </button>
+                </Button>
               </div>
 
               <div className="usuarios__pp-barra">
@@ -395,7 +394,7 @@ export default function Usuarios({ sesion }) {
                   <span className="usuarios__pp-selector-label">SELECCIONAR PROYECTO:</span>
                   <div className="usuarios__select-wrap">
                     <select
-                      value={proyectoSeleccionadoId ?? ''}
+                      ref={selectorProyectoRef} aria-label="Seleccionar proyecto" value={proyectoSeleccionadoId ?? ''}
                       onChange={(e) => setProyectoSeleccionadoId(Number(e.target.value))}
                     >
                       {proyectos.map((p) => (
@@ -411,10 +410,7 @@ export default function Usuarios({ sesion }) {
                 {proyectoActivo && (
                   <div className="usuarios__pp-resumen">
                     <span className="usuarios__nombre">{proyectoActivo.nombre}</span>
-                    <span className="usuarios__estado usuarios__estado--activo">
-                      <span className="usuarios__estado-dot" />
-                      {proyectoActivo.estado}
-                    </span>
+                    <ProyectoEstadoBadge estado={proyectoActivo.estado} archivado={proyectoActivo.archivado} />
                     <span className="usuarios__tenue">
                       {miembrosActivos.length} miembro{miembrosActivos.length === 1 ? '' : 's'} en
                       este proyecto
@@ -428,130 +424,7 @@ export default function Usuarios({ sesion }) {
 
             {proyectoActivo && (
               <div className="usuarios__tabla-wrap">
-                <table className="usuarios__tabla">
-                  <thead>
-                    <tr>
-                      <th>Usuario</th>
-                      <th>Correo</th>
-                      <th>Rol en el Sistema</th>
-                      <th>Rol en el Proyecto</th>
-                      <th>Fecha de ingreso al proyecto</th>
-                      <th className="usuarios__col-acciones">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {proyectoActivo.miembros.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="usuarios__tabla-vacio">
-                          Este proyecto aún no tiene miembros.
-                        </td>
-                      </tr>
-                    ) : (
-                      proyectoActivo.miembros.map((miembro) => {
-                        const sistema = badgeRolSistema(miembro.rol)
-                        const proyectoRol = badgeRolProyecto(miembro.rol_proyecto)
-                        const pendiente = esInvitacionPendiente(miembro)
-                        const inhabilitado = !pendiente && miembro.activo === false
-                        const filaClase = pendiente
-                          ? 'usuarios__fila-pendiente'
-                          : inhabilitado
-                            ? 'usuarios__fila-inhabilitada'
-                            : ''
-                        return (
-                          <tr key={miembro.id} className={filaClase}>
-                            <td>
-                              <div className="usuarios__usuario-celda">
-                                {renderAvatar(miembro, inhabilitado)}
-                                <span className="usuarios__nombre">{miembro.nombre}</span>
-                              </div>
-                            </td>
-                            <td className="usuarios__correo">{miembro.correo}</td>
-                            <td>
-                              <span className={sistema.className}>{sistema.label}</span>
-                            </td>
-                            <td>
-                              {pendiente ? (
-                                <span className="usuarios__rol-proyecto-badge usuarios__rol-proyecto-badge--pendiente">
-                                  Invitación pendiente
-                                </span>
-                              ) : inhabilitado ? (
-                                <span className="usuarios__rol-proyecto-badge usuarios__rol-proyecto-badge--inhabilitado">
-                                  Inhabilitado
-                                </span>
-                              ) : (
-                                <span className={proyectoRol.className}>{proyectoRol.label}</span>
-                              )}
-                            </td>
-                            <td className="usuarios__tenue usuarios__mono">
-                              {pendiente ? 'Pendiente de aceptar' : formatFechaCorta(miembro.fecha_ingreso)}
-                            </td>
-                            <td className="usuarios__col-acciones">
-                              {puedeEliminar && !pendiente ? (
-                                <div className="usuarios__menu-wrap">
-                                  <button
-                                    type="button"
-                                    className="usuarios__btn-kebab"
-                                    aria-label="Acciones"
-                                    onClick={() =>
-                                      setMenuMiembroAbiertoId(menuMiembroAbiertoId === miembro.id ? null : miembro.id)
-                                    }
-                                  >
-                                    <IconPuntos />
-                                  </button>
-                                  {menuMiembroAbiertoId === miembro.id && (
-                                    <div className="usuarios__menu" onMouseLeave={() => setMenuMiembroAbiertoId(null)}>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setMenuMiembroAbiertoId(null)
-                                          setAccionMiembro({
-                                            proyectoId: proyectoActivo.id,
-                                            usuario: miembro,
-                                            tipo: inhabilitado ? 'habilitar' : 'inhabilitar',
-                                          })
-                                        }}
-                                      >
-                                        {inhabilitado ? 'Habilitar' : 'Inhabilitar'}
-                                      </button>
-                                      <button
-                                        type="button"
-                                        className="usuarios__menu-peligro"
-                                        onClick={() => {
-                                          setMenuMiembroAbiertoId(null)
-                                          setAccionMiembro({
-                                            proyectoId: proyectoActivo.id,
-                                            usuario: miembro,
-                                            tipo: 'eliminar',
-                                          })
-                                        }}
-                                      >
-                                        Eliminar
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="usuarios__btn-texto"
-                                  onClick={() =>
-                                    setAccionMiembro({
-                                      proyectoId: proyectoActivo.id,
-                                      usuario: miembro,
-                                      tipo: pendiente ? 'cancelar' : inhabilitado ? 'habilitar' : 'inhabilitar',
-                                    })
-                                  }
-                                >
-                                  {pendiente ? 'Cancelar invitación' : inhabilitado ? 'Habilitar' : 'Inhabilitar'}
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        )
-                      })
-                    )}
-                  </tbody>
-                </table>
+                <UsuariosTabla porProyecto usuarios={proyectoActivo.miembros} renderAcciones={accionesMiembro} />
 
                 <div className="usuarios__pie">
                   <span className="usuarios__pie-info">
@@ -567,29 +440,29 @@ export default function Usuarios({ sesion }) {
       ) : (
         <>
           <div className="usuarios__stats">
-            <div className="usuarios__stat">
-              <span className="usuarios__stat-etiqueta">Usuarios Totales</span>
+            <SurfaceCard as="div" className="usuarios__stat">
+              <div className="usuarios__stat-cabecera"><span className="usuarios__stat-icono" aria-hidden="true"><IconUsuarios size={19} /></span><span className="usuarios__stat-etiqueta">Usuarios Totales</span></div>
               <div className="usuarios__stat-fila">
-                <span className="usuarios__stat-valor">{totales.total}</span>
+                <span className="usuarios__stat-valor">{cargando || errorCargaUsuarios ? '—' : totales.total}</span>
                 <span className="usuarios__stat-detalle">Usuarios registrados en la plataforma</span>
               </div>
-            </div>
+            </SurfaceCard>
 
-            <div className="usuarios__stat">
-              <span className="usuarios__stat-etiqueta">Usuarios Activos</span>
+            <SurfaceCard as="div" className="usuarios__stat">
+              <div className="usuarios__stat-cabecera"><span className="usuarios__stat-icono" aria-hidden="true"><IconCheckCirculo size={19} /></span><span className="usuarios__stat-etiqueta">Usuarios Activos</span></div>
               <div className="usuarios__stat-fila">
-                <span className="usuarios__stat-valor">{totales.activos}</span>
+                <span className="usuarios__stat-valor">{cargando || errorCargaUsuarios ? '—' : totales.activos}</span>
                 <span className="usuarios__stat-detalle">Activos en la plataforma</span>
               </div>
-            </div>
+            </SurfaceCard>
 
-            <div className="usuarios__stat">
-              <span className="usuarios__stat-etiqueta">Usuarios Inactivos</span>
+            <SurfaceCard as="div" className="usuarios__stat">
+              <div className="usuarios__stat-cabecera"><span className="usuarios__stat-icono" aria-hidden="true"><IconRoles size={19} /></span><span className="usuarios__stat-etiqueta">Usuarios Inactivos</span></div>
               <div className="usuarios__stat-fila">
-                <span className="usuarios__stat-valor">{totales.inactivos}</span>
+                <span className="usuarios__stat-valor">{cargando || errorCargaUsuarios ? '—' : totales.inactivos}</span>
                 <span className="usuarios__stat-detalle">Sin acceso registrado</span>
               </div>
-            </div>
+            </SurfaceCard>
           </div>
 
           <div className="usuarios__controles">
@@ -597,6 +470,8 @@ export default function Usuarios({ sesion }) {
               <IconBuscar size={14} className="usuarios__buscador-icono" />
               <input
                 type="text"
+                ref={buscarUsuariosRef}
+                aria-label="Buscar por nombre o correo"
                 placeholder="Buscar por nombre o correo..."
                 value={busqueda}
                 onChange={(e) => {
@@ -609,7 +484,7 @@ export default function Usuarios({ sesion }) {
             <div className="usuarios__filtros">
               <div className="usuarios__select-wrap">
                 <select
-                  value={filtroRol}
+                  aria-label="Filtrar por rol" value={filtroRol}
                   onChange={(e) => {
                     setFiltroRol(e.target.value)
                     setPagina(1)
@@ -626,7 +501,7 @@ export default function Usuarios({ sesion }) {
 
               <div className="usuarios__select-wrap">
                 <select
-                  value={filtroEstado}
+                  aria-label="Filtrar por estado" value={filtroEstado}
                   onChange={(e) => {
                     setFiltroEstado(e.target.value)
                     setPagina(1)
@@ -641,7 +516,7 @@ export default function Usuarios({ sesion }) {
 
               <div className="usuarios__select-wrap">
                 <select
-                  value={orden}
+                  aria-label="Ordenar usuarios" value={orden}
                   onChange={(e) => {
                     setOrden(e.target.value)
                     setPagina(1)
@@ -658,103 +533,11 @@ export default function Usuarios({ sesion }) {
           </div>
 
           <div className="usuarios__tabla-wrap">
-            <table className="usuarios__tabla">
-              <thead>
-                <tr>
-                  <th>Usuario</th>
-                  <th>Correo</th>
-                  <th>Rol</th>
-                  <th>Estado</th>
-                  <th>Último acceso</th>
-                  <th>Fecha de registro</th>
-                  <th className="usuarios__col-acciones">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cargando ? (
-                  <tr>
-                    <td colSpan={7} className="usuarios__tabla-vacio">Cargando usuarios...</td>
-                  </tr>
-                ) : usuariosPagina.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="usuarios__tabla-vacio">
-                      No se encontraron usuarios con los filtros seleccionados.
-                    </td>
-                  </tr>
-                ) : (
-                  usuariosPagina.map((usuario) => (
-                    <tr key={usuario.id}>
-                      <td>
-                        <div className="usuarios__usuario-celda">
-                          {renderAvatar(usuario)}
-                          <span className="usuarios__nombre">{usuario.nombre}</span>
-                        </div>
-                      </td>
-                      <td className="usuarios__correo">{usuario.correo}</td>
-                      <td>
-                        <span
-                          className={`usuarios__rol-badge ${
-                            usuario.rol === 'Administrador' ? 'usuarios__rol-badge--admin' : ''
-                          }`}
-                        >
-                          {usuario.rol}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`usuarios__estado ${usuario.activo ? 'usuarios__estado--activo' : ''}`}>
-                          <span className="usuarios__estado-dot" />
-                          {usuario.activo ? 'Activo' : 'Inactivo'}
-                        </span>
-                      </td>
-                      <td className="usuarios__tenue usuarios__mono">{formatFecha(usuario.ultimo_acceso)}</td>
-                      <td className="usuarios__tenue usuarios__mono">{formatFecha(usuario.fecha_creacion)}</td>
-                      <td className="usuarios__col-acciones">
-                        <div className="usuarios__menu-wrap">
-                          <button
-                            type="button"
-                            className="usuarios__btn-kebab"
-                            aria-label="Acciones"
-                            onClick={() => setMenuAbiertoId(menuAbiertoId === usuario.id ? null : usuario.id)}
-                          >
-                            <IconPuntos />
-                          </button>
-                          {menuAbiertoId === usuario.id && (
-                            <div className="usuarios__menu" onMouseLeave={() => setMenuAbiertoId(null)}>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setMenuAbiertoId(null)
-                                  setFormulario({
-                                    modo: 'editar',
-                                    id: usuario.id,
-                                    datos: { nombre: usuario.nombre, correo: usuario.correo, contrasena: '', rol: usuario.rol },
-                                  })
-                                }}
-                              >
-                                Editar
-                              </button>
-                              {puedeEliminar && (
-                                <button
-                                  type="button"
-                                  className="usuarios__menu-peligro"
-                                  onClick={() => {
-                                    setMenuAbiertoId(null)
-                                    setUsuarioAEliminar(usuario)
-                                  }}
-                                >
-                                  Eliminar
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+            <UsuariosTabla usuarios={usuariosPagina} total={usuarios.length} cargando={cargando}
+              error={errorCargaUsuarios} onReintentar={reintentarUsuarios} renderAcciones={accionesUsuario}
+              onLimpiar={() => { setBusqueda(''); setFiltroRol('Todos'); setFiltroEstado('Todos'); setPagina(1) }} />
 
+            {!cargando && !errorCargaUsuarios && (
             <div className="usuarios__pie">
               <span className="usuarios__pie-info">
                 Mostrando <strong>{usuariosFiltrados.length === 0 ? 0 : (paginaActual - 1) * POR_PAGINA + 1}-
@@ -764,299 +547,59 @@ export default function Usuarios({ sesion }) {
 
               {totalPaginas > 1 && (
                 <div className="usuarios__paginacion">
-                  <button
+                  <Button
                     type="button"
-                    disabled={paginaActual === 1}
+                    aria-label="Página anterior" disabled={paginaActual === 1}
                     onClick={() => setPagina(paginaActual - 1)}
                   >
                     &lt;
-                  </button>
+                  </Button>
                   {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((n) => (
-                    <button
+                    <Button
                       key={n}
                       type="button"
-                      className={n === paginaActual ? 'usuarios__pagina-activa' : ''}
+                      aria-label={`Página ${n}`} aria-current={n === paginaActual ? 'page' : undefined} className={n === paginaActual ? 'usuarios__pagina-activa' : ''}
                       onClick={() => setPagina(n)}
                     >
                       {n}
-                    </button>
+                    </Button>
                   ))}
-                  <button
+                  <Button
                     type="button"
-                    disabled={paginaActual === totalPaginas}
+                    aria-label="Página siguiente" disabled={paginaActual === totalPaginas}
                     onClick={() => setPagina(paginaActual + 1)}
                   >
                     &gt;
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
+            )}
           </div>
         </>
       )}
 
-      {formulario && (
-        <div className="usuarios__fondo" onClick={() => setFormulario(null)}>
-          <form className="usuarios__modal" onClick={(e) => e.stopPropagation()} onSubmit={guardar}>
-            <h2>{formulario.modo === 'crear' ? 'Nuevo usuario' : 'Editar usuario'}</h2>
+      <UsuarioFormulario formulario={formulario} guardando={guardandoUsuario} error={errorFormulario}
+        returnFocusRef={formularioOrigenRef} onSubmit={guardar}
+        onClose={() => { if (!guardandoUsuario) setFormulario(null) }}
+        onChange={(datos) => setFormulario((actual) => actual ? { ...actual, datos } : actual)} />
 
-            <label htmlFor="nombre">Nombre</label>
-            <input
-              id="nombre"
-              required
-              value={formulario.datos.nombre}
-              onChange={(e) =>
-                setFormulario({ ...formulario, datos: { ...formulario.datos, nombre: e.target.value } })
-              }
-            />
+      <MiembroAccionModal accion={accionMiembro} procesando={procesandoMiembro} error={errorAccionMiembro}
+        returnFocusRef={accionMiembro?.tipo === 'cancelar' ? selectorProyectoRef : accionMiembroOrigenRef}
+        onClose={() => { if (!procesandoMiembro) setAccionMiembro(null) }} onConfirm={confirmarAccionMiembro} />
+      <MiembroEliminadoResultado miembro={miembroEliminado} onClose={() => setMiembroEliminado(null)} returnFocusRef={selectorProyectoRef} />
 
-            <label htmlFor="correo">Correo</label>
-            <input
-              id="correo"
-              type="email"
-              required
-              value={formulario.datos.correo}
-              onChange={(e) =>
-                setFormulario({ ...formulario, datos: { ...formulario.datos, correo: e.target.value } })
-              }
-            />
+      <EliminarCuentaModal usuario={usuarioAEliminar} eliminando={eliminandoUsuario} error={errorEliminarUsuario}
+        returnFocusRef={eliminarUsuarioOrigenRef} onConfirm={confirmarEliminarUsuario}
+        onClose={() => { if (!eliminandoUsuario) setUsuarioAEliminar(null) }} />
+      <CuentaEliminadaResultado usuario={usuarioEliminado} onClose={() => setUsuarioEliminado(null)} returnFocusRef={buscarUsuariosRef} />
 
-            {formulario.modo === 'crear' && (
-              <>
-                <label htmlFor="contrasena">Contraseña</label>
-                <input
-                  id="contrasena"
-                  type="password"
-                  required
-                  value={formulario.datos.contrasena}
-                  onChange={(e) =>
-                    setFormulario({ ...formulario, datos: { ...formulario.datos, contrasena: e.target.value } })
-                  }
-                />
-              </>
-            )}
-
-            <label htmlFor="rol">Rol</label>
-            <select
-              id="rol"
-              value={formulario.datos.rol}
-              onChange={(e) => setFormulario({ ...formulario, datos: { ...formulario.datos, rol: e.target.value } })}
-            >
-              <option value="Administrador">Administrador</option>
-              <option value="Jefe de Proyecto">Jefe de Proyecto</option>
-              <option value="Colaborador">Colaborador</option>
-            </select>
-
-            <div className="usuarios__modal-acciones">
-              <button type="button" className="usuarios__btn-texto" onClick={() => setFormulario(null)}>
-                Cancelar
-              </button>
-              <button type="submit" className="usuarios__btn-nuevo">
-                Guardar
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {accionMiembro && (
-        <div className="usuarios__fondo" onClick={() => setAccionMiembro(null)}>
-          <div className="usuarios__modal" onClick={(e) => e.stopPropagation()}>
-            <h2>
-              {accionMiembro.tipo === 'cancelar'
-                ? 'Cancelar invitación'
-                : accionMiembro.tipo === 'habilitar'
-                  ? 'Habilitar en el proyecto'
-                  : accionMiembro.tipo === 'eliminar'
-                    ? 'Eliminar del proyecto'
-                    : 'Inhabilitar en el proyecto'}
-            </h2>
-            <p className="usuarios__modal-texto">
-              {accionMiembro.tipo === 'cancelar' ? (
-                <>
-                  Se cancelará la invitación pendiente de <strong>{accionMiembro.usuario.nombre}</strong> a este
-                  proyecto.
-                </>
-              ) : accionMiembro.tipo === 'habilitar' ? (
-                <>
-                  <strong>{accionMiembro.usuario.nombre}</strong> podrá volver a interactuar con este proyecto.
-                </>
-              ) : accionMiembro.tipo === 'eliminar' ? (
-                <>
-                  <strong>{accionMiembro.usuario.nombre}</strong> será eliminado de este proyecto y ya no tendrá
-                  acceso a él. Esta acción no se puede deshacer.
-                </>
-              ) : (
-                <>
-                  <strong>{accionMiembro.usuario.nombre}</strong> seguirá apareciendo en este proyecto, pero ya no
-                  podrá manipularlo.
-                </>
-              )}
-            </p>
-            <div className="usuarios__modal-acciones">
-              <button type="button" className="usuarios__btn-texto" onClick={() => setAccionMiembro(null)}>
-                Volver
-              </button>
-              <button
-                type="button"
-                className={accionMiembro.tipo === 'habilitar' ? 'usuarios__btn-nuevo' : 'usuarios__btn-peligro'}
-                onClick={confirmarAccionMiembro}
-              >
-                {accionMiembro.tipo === 'cancelar'
-                  ? 'Cancelar invitación'
-                  : accionMiembro.tipo === 'habilitar'
-                    ? 'Habilitar'
-                    : accionMiembro.tipo === 'eliminar'
-                      ? 'Eliminar'
-                      : 'Inhabilitar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {miembroEliminado && (
-        <div className="usuarios__fondo" onClick={() => setMiembroEliminado(null)}>
-          <div className="usuarios__modal" onClick={(e) => e.stopPropagation()}>
-            <div className="usuarios__confirmacion-icono usuarios__confirmacion-icono--ok">
-              <IconCheck />
-            </div>
-            <h2>Usuario eliminado con éxito</h2>
-            <p className="usuarios__modal-texto">
-              <strong>{miembroEliminado.nombre}</strong> fue eliminado del proyecto correctamente.
-            </p>
-            <div className="usuarios__modal-acciones">
-              <button type="button" className="usuarios__btn-nuevo" onClick={() => setMiembroEliminado(null)}>
-                Entendido
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {usuarioAEliminar && (
-        <div className="usuarios__fondo" onClick={() => setUsuarioAEliminar(null)}>
-          <div className="usuarios__modal" onClick={(e) => e.stopPropagation()}>
-            <h2>Eliminar usuario</h2>
-            <p className="usuarios__modal-texto">
-              <strong>{usuarioAEliminar.nombre}</strong> será eliminado del sistema y ya no tendrá acceso a la
-              plataforma ni a ninguno de sus proyectos. Esta acción no se puede deshacer.
-            </p>
-            <div className="usuarios__modal-acciones">
-              <button type="button" className="usuarios__btn-texto" onClick={() => setUsuarioAEliminar(null)}>
-                Volver
-              </button>
-              <button type="button" className="usuarios__btn-peligro" onClick={confirmarEliminarUsuario}>
-                Eliminar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {usuarioEliminado && (
-        <div className="usuarios__fondo" onClick={() => setUsuarioEliminado(null)}>
-          <div className="usuarios__modal" onClick={(e) => e.stopPropagation()}>
-            <div className="usuarios__confirmacion-icono usuarios__confirmacion-icono--ok">
-              <IconCheck />
-            </div>
-            <h2>Usuario eliminado con éxito</h2>
-            <p className="usuarios__modal-texto">
-              <strong>{usuarioEliminado.nombre}</strong> fue eliminado del sistema correctamente.
-            </p>
-            <div className="usuarios__modal-acciones">
-              <button type="button" className="usuarios__btn-nuevo" onClick={() => setUsuarioEliminado(null)}>
-                Entendido
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {invitarA && (
-        <div className="usuarios__fondo" onClick={() => setInvitarA(null)}>
-          <form className="usuarios__modal" onClick={(e) => e.stopPropagation()} onSubmit={invitarMiembro}>
-            <h2>Invitar a {invitarA.proyecto.nombre}</h2>
-
-            <label htmlFor="miembro">Usuario</label>
-            <select
-              id="miembro"
-              required
-              value={invitarA.usuarioId}
-              onChange={(e) => setInvitarA({ ...invitarA, usuarioId: e.target.value })}
-            >
-              {invitarA.opciones.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.nombre} ({u.correo})
-                </option>
-              ))}
-            </select>
-
-            <label htmlFor="rolProyecto">Rol en el proyecto</label>
-            <select
-              id="rolProyecto"
-              value={invitarA.rolProyecto}
-              onChange={(e) => setInvitarA({ ...invitarA, rolProyecto: e.target.value })}
-            >
-              <option value="MIEMBRO">Miembro</option>
-              <option value="RESPONSABLE">Responsable</option>
-            </select>
-
-            <label htmlFor="cargo">Cargo (opcional)</label>
-            <input
-              id="cargo"
-              placeholder="Ej. Analista de datos"
-              value={invitarA.cargo}
-              onChange={(e) => setInvitarA({ ...invitarA, cargo: e.target.value })}
-            />
-
-            <div className="usuarios__modal-acciones">
-              <button type="button" className="usuarios__btn-texto" onClick={() => setInvitarA(null)}>
-                Cancelar
-              </button>
-              <button type="submit" className="usuarios__btn-nuevo">
-                Enviar invitación
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {invitacion && (
-        <div className="usuarios__fondo" onClick={() => setInvitacion(null)}>
-          <div className="usuarios__modal" onClick={(e) => e.stopPropagation()}>
-            {invitacion.enviada ? (
-              <>
-                <div className="usuarios__confirmacion-icono usuarios__confirmacion-icono--ok">
-                  <IconCheck />
-                </div>
-                <h2>Invitación enviada con éxito</h2>
-                <p className="usuarios__modal-texto">
-                  {invitacion.tipo === 'proyecto'
-                    ? <>Se envió un correo a <strong>{invitacion.correo}</strong> con la invitación al proyecto. Quedará como <strong>pendiente</strong> hasta que la acepte.</>
-                    : <>Se envió un correo a <strong>{invitacion.correo}</strong> con sus datos de acceso.</>}
-                </p>
-              </>
-            ) : (
-              <>
-                <div className="usuarios__confirmacion-icono usuarios__confirmacion-icono--error">
-                  <IconAlerta />
-                </div>
-                <h2>{invitacion.tipo === 'proyecto' ? 'Invitación creada, pero el correo no se pudo enviar' : 'Usuario creado, pero el correo no se pudo enviar'}</h2>
-                <p className="usuarios__modal-texto">
-                  No se pudo enviar la invitación a <strong>{invitacion.correo}</strong>. Avísale
-                  manualmente.
-                </p>
-              </>
-            )}
-            <div className="usuarios__modal-acciones">
-              <button type="button" className="usuarios__btn-nuevo" onClick={() => setInvitacion(null)}>
-                Entendido
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <InvitarUsuarioFormulario invitacion={invitarA} enviando={enviandoInvitacion} error={errorInvitacion}
+        returnFocusRef={invitacionOrigenRef} onSubmit={invitarMiembro}
+        onClose={() => { if (!enviandoInvitacion) setInvitarA(null) }}
+        onChange={(datos) => setInvitarA((actual) => actual ? datos : actual)} />
+      <InvitacionResultado invitacion={invitacion} onClose={() => setInvitacion(null)}
+        returnFocusRef={invitacion?.tipo === 'proyecto' ? invitacionOrigenRef : formularioOrigenRef} />
     </div>
   )
 }

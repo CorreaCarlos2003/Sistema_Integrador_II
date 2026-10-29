@@ -10,11 +10,14 @@ import DocumentoEliminadoModal from './DocumentoEliminadoModal'
 import EstadoRag from './EstadoRag'
 import HistorialVersiones from './HistorialVersiones'
 import ModalNuevaVersion from './ModalNuevaVersion'
+import ProyectoEstadoBadge from './ProyectoEstadoBadge'
+import Button from '../../../components/ui/Button'
+import DocumentosListado from './DocumentosListado'
+import { IconSubirArchivo } from '../../../components/icons'
+import { DOCUMENTO_ACCEPT, validarArchivoDocumento } from '../../../utils/documentoArchivo'
 import './ProyectoDetalle.css'
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
-const EXTENSIONES_PERMITIDAS = ['.docx', '.pdf', '.xlsx', '.pptx', '.txt', '.md']
-const TAMANO_MAXIMO_BYTES = 30 * 1024 * 1024 // 30MB
 
 const IconVolver = (p) => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" {...p}>
@@ -60,20 +63,7 @@ const IconChat = (p) => (
   </svg>
 )
 
-const IconSubir = (p) => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...p}>
-    <path d="M12 3v12" />
-    <polyline points="7 8 12 3 17 8" />
-    <path d="M5 21h14" />
-  </svg>
-)
 
-const IconEliminar = (p) => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...p}>
-    <polyline points="3 6 5 6 21 6" />
-    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-  </svg>
-)
 
 const IconRelojMini = (p) => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...p}>
@@ -82,12 +72,6 @@ const IconRelojMini = (p) => (
   </svg>
 )
 
-const IconHistorial = (p) => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...p}>
-    <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
-    <path d="M3 3v5h5M12 7v5l3 2" />
-  </svg>
-)
 
 function formatFecha(fechaStr) {
   if (!fechaStr) return ''
@@ -126,8 +110,13 @@ export default function ProyectoDetalle({
   const [pendientesCount, setPendientesCount] = useState(0)
   const [documentoAEliminar, setDocumentoAEliminar] = useState(null)
   const [eliminandoDocumento, setEliminandoDocumento] = useState(false)
-  const [documentoEliminadoAviso, setDocumentoEliminadoAviso] = useState(false)
+  const [errorEliminarDocumento, setErrorEliminarDocumento] = useState(null)
+  const eliminarDocumentoRef = useRef(null)
+  const buscarDocumentoRef = useRef(null)
+  const [documentoEliminadoAviso, setDocumentoEliminadoAviso] = useState(null)
   const [documentoVersion, setDocumentoVersion] = useState(null)
+  const [errorNuevaVersion, setErrorNuevaVersion] = useState(null)
+  const [errorSubida, setErrorSubida] = useState(null)
   const [documentoHistorial, setDocumentoHistorial] = useState(null)
   const [versiones, setVersiones] = useState([])
   const [cargandoVersiones, setCargandoVersiones] = useState(false)
@@ -136,7 +125,6 @@ export default function ProyectoDetalle({
   const ragListo = estadoRag?.estado === 'listo'
   const subiendo = cargaDocumentos?.activa
 
-  const estado = proyecto.archivado ? 'archivado' : (proyecto.estado || '').toLowerCase()
   const miembros = proyecto.miembros || []
   const puedeEliminarDocumentos = sesion?.rol === 'Administrador' || sesion?.rol === 'Jefe de Proyecto'
   const esResponsableDeEsteProyecto = (proyecto.responsables || []).some((r) => r.id === sesion?.id)
@@ -185,7 +173,15 @@ export default function ProyectoDetalle({
     return documentos.filter((doc) => doc.nombre.toLowerCase().includes(busqueda.toLowerCase()))
   }, [documentos, busqueda])
 
-  const handleSubirClick = () => setMostrarInfoSubida(true)
+  const handleSubirClick = () => {
+    setErrorSubida(null)
+    setMostrarInfoSubida(true)
+  }
+
+  const abrirNuevaVersion = (documento) => {
+    setErrorNuevaVersion(null)
+    setDocumentoVersion(documento)
+  }
 
   const handleContinuarSubida = () => {
     setMostrarInfoSubida(false)
@@ -197,18 +193,13 @@ export default function ProyectoDetalle({
     e.target.value = ''
     if (!archivo) return
 
-    const extension = `.${archivo.name.split('.').pop()?.toLowerCase() || ''}`
-    if (!EXTENSIONES_PERMITIDAS.includes(extension)) {
-      setErrorDocumentos(
-        'Solo se admiten documentos Word (.docx), PDF, Excel (.xlsx), PowerPoint (.pptx), Bloc de notas (.txt) o Markdown (.md).',
-      )
+    const errorArchivo = validarArchivoDocumento(archivo)
+    if (errorArchivo) {
+      setErrorSubida(errorArchivo)
+      setMostrarInfoSubida(true)
       return
     }
-    if (archivo.size > TAMANO_MAXIMO_BYTES) {
-      setErrorDocumentos('El archivo supera el límite de 30MB permitido.')
-      return
-    }
-
+    setErrorSubida(null)
     setErrorDocumentos(null)
     try {
       const documentoSubido = await cargaDocumentos.subirDocumento({ proyectoId: proyecto.id, archivo })
@@ -218,24 +209,21 @@ export default function ProyectoDetalle({
       }
       onActividad?.()
     } catch (err) {
-      if (err.message !== 'Carga cancelada') setErrorDocumentos(err.message)
+      if (err.message !== 'Carga cancelada') {
+        setErrorSubida(err.message)
+        setMostrarInfoSubida(true)
+      }
     }
   }
 
   const handleSubirVersion = async (archivo) => {
     if (!documentoVersion) return
-    const extension = `.${archivo.name.split('.').pop()?.toLowerCase() || ''}`
-    if (!EXTENSIONES_PERMITIDAS.includes(extension)) {
-      setErrorDocumentos(
-        'Solo se admiten documentos Word (.docx), PDF, Excel (.xlsx), PowerPoint (.pptx), Bloc de notas (.txt) o Markdown (.md).',
-      )
+    const errorArchivo = validarArchivoDocumento(archivo)
+    if (errorArchivo) {
+      setErrorNuevaVersion(errorArchivo)
       return
     }
-    if (archivo.size > TAMANO_MAXIMO_BYTES) {
-      setErrorDocumentos('El archivo supera el límite de 30MB permitido.')
-      return
-    }
-    setErrorDocumentos(null)
+    setErrorNuevaVersion(null)
     try {
       await cargaDocumentos.subirVersion({
         proyectoId: proyecto.id,
@@ -247,7 +235,7 @@ export default function ProyectoDetalle({
       onActividad?.()
     } catch (err) {
       if (err.message === 'Carga cancelada') setDocumentoVersion(null)
-      else setErrorDocumentos(err.message)
+      else setErrorNuevaVersion(err.message)
     }
   }
 
@@ -272,19 +260,24 @@ export default function ProyectoDetalle({
 
   const handlePedirEliminarDocumento = (documento) => {
     if (!puedeEliminarDocumentos) return
+    eliminarDocumentoRef.current = document.activeElement
+    setErrorEliminarDocumento(null)
     setDocumentoAEliminar(documento)
   }
 
   const handleConfirmarEliminarDocumento = async () => {
-    if (!documentoAEliminar) return
+    if (!documentoAEliminar || eliminandoDocumento) return
     const exito = await handleEliminarDocumento(documentoAEliminar.id)
-    setDocumentoAEliminar(null)
-    if (exito) setDocumentoEliminadoAviso(true)
+    if (exito) {
+      setDocumentoEliminadoAviso(documentoAEliminar.nombre)
+      setDocumentoAEliminar(null)
+    }
   }
 
   const handleEliminarDocumento = async (idDocumento) => {
     if (!puedeEliminarDocumentos) return false
     setEliminandoDocumento(true)
+    setErrorEliminarDocumento(null)
     try {
       const response = await fetch(`${API_BASE_URL}/proyectos/${proyecto.id}/documentos/${idDocumento}`, {
         method: 'DELETE',
@@ -295,9 +288,10 @@ export default function ProyectoDetalle({
         throw new Error(detalle?.detail || 'No se pudo eliminar el documento')
       }
       setDocumentos((prev) => prev.filter((doc) => doc.id !== idDocumento))
+      fetchPendientesCount()
       return true
     } catch (err) {
-      setErrorDocumentos(err.message)
+      setErrorEliminarDocumento(err.message)
       return false
     } finally {
       setEliminandoDocumento(false)
@@ -305,17 +299,21 @@ export default function ProyectoDetalle({
   }
 
   return (
-    <div className="proyecto-detalle">
-      <div className="proyecto-detalle__breadcrumb">
+    <div className="proyecto-detalle proyecto-detalle--modern" data-docai-layout="modern">
+      <nav className="proyecto-detalle__breadcrumb" aria-label="Migas de pan">
         <button type="button" className="proyecto-detalle__volver" onClick={onVolver}>
           <IconVolver />
-          VOLVER A PROYECTOS
+          Volver a Proyectos
         </button>
-        <span className="proyecto-detalle__separador">/</span>
-        <span className="proyecto-detalle__crumb">Proyectos</span>
-        <span className="proyecto-detalle__separador">/</span>
-        <span className="proyecto-detalle__crumb proyecto-detalle__crumb--activo">{proyecto.nombre}</span>
-      </div>
+        <span className="proyecto-detalle__separador" aria-hidden="true">/</span>
+        <button type="button" className="proyecto-detalle__crumb-btn" onClick={onVolver}>
+          Proyectos
+        </button>
+        <span className="proyecto-detalle__separador" aria-hidden="true">/</span>
+        <span className="proyecto-detalle__crumb proyecto-detalle__crumb--activo" aria-current="page">
+          {proyecto.nombre}
+        </span>
+      </nav>
 
       <div className="proyecto-detalle__header">
         <div className="proyecto-detalle__header-top">
@@ -323,10 +321,7 @@ export default function ProyectoDetalle({
             <div className="proyecto-detalle__titulo-fila">
               <h1 className="proyecto-detalle__titulo">{proyecto.nombre}</h1>
               <span className="proyecto-detalle__codigo">{proyecto.codigo || '#PRJ-000'}</span>
-              <span className={`proyecto-detalle__badge proyecto-detalle__badge--${estado}`}>
-                <span className="proyecto-detalle__badge-dot" />
-                {proyecto.archivado ? 'ARCHIVADO' : proyecto.estado?.toUpperCase()}
-              </span>
+              <ProyectoEstadoBadge estado={proyecto.estado} archivado={proyecto.archivado} />
             </div>
 
             {proyecto.descripcion && (
@@ -374,58 +369,28 @@ export default function ProyectoDetalle({
 
       <EstadoRag estado={estadoRag?.estado} mensaje={estadoRag?.mensaje} onReintentar={estadoRag?.refrescar} />
 
-      <div className="proyecto-detalle__acciones">
-        <button
-          type="button"
-          className="proyecto-detalle__accion proyecto-detalle__accion--principal"
+      <section className="proyecto-detalle__chat-banner" aria-labelledby="proyecto-chat-titulo">
+        <span className="proyecto-detalle__chat-icono" aria-hidden="true"><IconChat /></span>
+        <div className="proyecto-detalle__chat-texto">
+          <h2 id="proyecto-chat-titulo">Consulta tus documentos con IA</h2>
+          <p>{ragListo ? 'Haz preguntas sobre la documentación de este proyecto.' : 'Estamos preparando el asistente documental de este proyecto.'}</p>
+        </div>
+        <Button
+          variant="primary"
           onClick={() => onIniciarChat?.()}
           disabled={!ragListo}
           title={!ragListo ? 'El asistente documental todavía se está preparando' : undefined}
         >
-          <span className="proyecto-detalle__accion-info">
-            <span className="proyecto-detalle__accion-icono proyecto-detalle__accion-icono--principal">
-              <IconChat />
-            </span>
-            <span className="proyecto-detalle__accion-titulo">{ragListo ? 'Iniciar Chat con IA' : 'Preparando Chat con IA'}</span>
-          </span>
-          <span className="proyecto-detalle__accion-btn proyecto-detalle__accion-btn--oscuro">Consultar</span>
-        </button>
-
-        <button type="button" className="proyecto-detalle__accion" onClick={handleSubirClick} disabled={subiendo || !ragListo}>
-          <span className="proyecto-detalle__accion-info">
-            <span className="proyecto-detalle__accion-icono">
-              <IconSubir />
-            </span>
-            <span className="proyecto-detalle__accion-titulo">Subir Documentos</span>
-          </span>
-          <span className="proyecto-detalle__accion-btn">{!ragListo ? 'Preparando...' : subiendo ? 'Subiendo...' : 'Seleccionar'}</span>
-        </button>
-        <input
-          ref={inputArchivoRef}
-          type="file"
-          accept=".docx,.pdf,.xlsx,.pptx,.txt,.md"
-          style={{ display: 'none' }}
-          onChange={handleArchivoSeleccionado}
-        />
-
-        {puedeAprobarDocumentos && (
-          <button
-            type="button"
-            className="proyecto-detalle__accion"
-            onClick={() => setMostrarAprobacion(true)}
-          >
-            <span className="proyecto-detalle__accion-info">
-              <span className="proyecto-detalle__accion-icono">
-                <IconRelojMini />
-              </span>
-              <span className="proyecto-detalle__accion-titulo">Documentos por Aprobar</span>
-            </span>
-            <span className="proyecto-detalle__accion-btn">
-              {pendientesCount > 0 ? `${pendientesCount} pendiente${pendientesCount === 1 ? '' : 's'}` : 'Ver'}
-            </span>
-          </button>
-        )}
-      </div>
+          {ragListo ? 'Iniciar Chat con IA' : 'Preparando Chat con IA'}
+        </Button>
+      </section>
+      <input
+        ref={inputArchivoRef}
+        type="file"
+        accept={DOCUMENTO_ACCEPT}
+        style={{ display: 'none' }}
+        onChange={handleArchivoSeleccionado}
+      />
 
       <nav className="proyecto-detalle__tabs">
         <button
@@ -457,104 +422,44 @@ export default function ProyectoDetalle({
               <IconBuscarMini className="proyecto-detalle__buscador-icono" />
               <input
                 type="text"
+                ref={buscarDocumentoRef}
+                aria-label="Buscar por nombre de documento"
                 placeholder="Buscar por nombre de documento..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
               />
             </div>
-          </div>
-
-          <div className="proyecto-detalle__tabla-wrap">
-            <div className="proyecto-detalle__tabla-header">
-              <div className="proyecto-detalle__col-nombre">NOMBRE DE EXPEDIENTE</div>
-              <div>FRAGMENTOS INDEXADOS</div>
-              <div>ESTADO</div>
-              <div>FECHA DE SUBIDA</div>
-              <div className="proyecto-detalle__col-comandos">OPCIONES</div>
-            </div>
-
-            {cargandoDocumentos ? (
-              <div className="proyecto-detalle__vacio">Cargando documentos...</div>
-            ) : errorDocumentos ? (
-              <div className="proyecto-detalle__vacio">Error: {errorDocumentos}</div>
-            ) : documentosFiltrados.length === 0 ? (
-              <div className="proyecto-detalle__vacio">No se encontraron expedientes con los filtros seleccionados.</div>
-            ) : (
-              documentosFiltrados.map((doc) => (
-                <div key={doc.id} className="proyecto-detalle__fila">
-                  <div className="proyecto-detalle__col-nombre">
-                    <span className="proyecto-detalle__icono-archivo" style={{ background: 'rgba(165,240,234,0.5)', color: '#156965' }}>
-                      <IconDocMini />
-                    </span>
-                    <div className="proyecto-detalle__archivo-info">
-                      <span className="proyecto-detalle__archivo-nombre">{doc.nombre}</span>
-                      <span className="proyecto-detalle__archivo-version">Versión vigente: v{doc.numero_version || '1'}</span>
-                    </div>
-                  </div>
-
-                  <div className="proyecto-detalle__col-dimensiones">
-                    <span>{doc.chunks_indexados}</span>
-                  </div>
-
-                  <div>
-                    {doc.estado_aprobacion === 'PENDIENTE' ? (
-                      <span className="proyecto-detalle__estado-ocr proyecto-detalle__estado-ocr--pendiente">
-                        <span className="proyecto-detalle__estado-ocr-dot" />
-                        PENDIENTE
-                      </span>
-                    ) : (
-                      <span className="proyecto-detalle__estado-ocr">
-                        <span className="proyecto-detalle__estado-ocr-dot" />
-                        INDEXADO
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="proyecto-detalle__col-autor">
-                    <span className="proyecto-detalle__tenue">{formatFecha(doc.fecha_subida)}</span>
-                  </div>
-
-                  <div className="proyecto-detalle__col-comandos">
-                    <button
-                      type="button"
-                      className="proyecto-detalle__btn-version"
-                      onClick={() => abrirHistorial(doc)}
-                      title="Ver historial de versiones"
-                    >
-                      <IconHistorial /> Historial
-                    </button>
-                    {puedeEliminarDocumentos && (
-                      <>
-                        <button
-                          type="button"
-                          className="proyecto-detalle__btn-version proyecto-detalle__btn-version--principal"
-                          onClick={() => setDocumentoVersion(doc)}
-                          disabled={!ragListo || subiendo}
-                          title={!ragListo ? 'El modelo documental todavía se está preparando' : 'Subir nueva versión'}
-                        >
-                          <IconSubir /> Nueva versión
-                        </button>
-                        <button
-                          type="button"
-                          className="proyecto-detalle__btn-icono"
-                          title="Eliminar"
-                          onClick={() => handlePedirEliminarDocumento(doc)}
-                        >
-                          <IconEliminar />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-
-            <div className="proyecto-detalle__tabla-footer">
-              <div className="proyecto-detalle__footer-info">
-                <span>Mostrando {documentosFiltrados.length} de {documentos.length} documentos</span>
-              </div>
+            <div className="proyecto-detalle__documento-acciones">
+              {puedeAprobarDocumentos && (
+                <Button onClick={() => setMostrarAprobacion(true)}>
+                  <span aria-hidden="true"><IconRelojMini /></span>
+                  Por aprobar
+                  {pendientesCount > 0 && <span className="proyecto-detalle__pendientes">{pendientesCount}</span>}
+                </Button>
+              )}
+              <Button variant="primary" onClick={handleSubirClick} disabled={subiendo || !ragListo}>
+                <span aria-hidden="true"><IconSubirArchivo size={14} /></span>
+                {!ragListo ? 'Preparando...' : subiendo ? 'Subiendo...' : 'Subir documentos'}
+              </Button>
             </div>
           </div>
+
+          <DocumentosListado
+            documentos={documentosFiltrados}
+            total={documentos.length}
+            cargando={cargandoDocumentos}
+            error={errorDocumentos}
+            busqueda={busqueda}
+            puedeGestionar={puedeEliminarDocumentos}
+            ragListo={ragListo}
+            subiendo={subiendo}
+            formatFecha={formatFecha}
+            onHistorial={abrirHistorial}
+            onNuevaVersion={abrirNuevaVersion}
+            onEliminar={handlePedirEliminarDocumento}
+            onReintentar={fetchDocumentos}
+            onLimpiarBusqueda={() => setBusqueda('')}
+          />
         </div>
       ) : (
         <div className="proyecto-detalle__miembros">
@@ -581,6 +486,7 @@ export default function ProyectoDetalle({
 
       <SubirDocumentoInfoModal
         visible={mostrarInfoSubida}
+        error={errorSubida}
         onCerrar={() => setMostrarInfoSubida(false)}
         onContinuar={handleContinuarSubida}
       />
@@ -593,13 +499,17 @@ export default function ProyectoDetalle({
       <ConfirmarEliminarModal
         nombreDocumento={documentoAEliminar?.nombre}
         eliminando={eliminandoDocumento}
+        error={errorEliminarDocumento}
+        returnFocusRef={eliminarDocumentoRef}
         onCancelar={() => setDocumentoAEliminar(null)}
         onConfirmar={handleConfirmarEliminarDocumento}
       />
 
       <DocumentoEliminadoModal
-        visible={documentoEliminadoAviso}
-        onCerrar={() => setDocumentoEliminadoAviso(false)}
+        visible={Boolean(documentoEliminadoAviso)}
+        nombreDocumento={documentoEliminadoAviso}
+        returnFocusRef={buscarDocumentoRef}
+        onCerrar={() => setDocumentoEliminadoAviso(null)}
       />
 
       {mostrarAprobacion && (
@@ -617,6 +527,10 @@ export default function ProyectoDetalle({
         key={documentoVersion?.id || 'cerrado'}
         documento={documentoVersion}
         cargando={subiendo}
+        carga={cargaDocumentos?.carga}
+        error={errorNuevaVersion}
+        onArchivoCambiado={() => setErrorNuevaVersion(null)}
+        onCancelarCarga={cargaDocumentos?.cancelar}
         onCancelar={() => setDocumentoVersion(null)}
         onConfirmar={handleSubirVersion}
       />
@@ -625,6 +539,7 @@ export default function ProyectoDetalle({
         versiones={versiones}
         cargando={cargandoVersiones}
         error={errorVersiones}
+        onReintentar={() => abrirHistorial(documentoHistorial)}
         onCerrar={() => setDocumentoHistorial(null)}
       />
     </div>

@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react'
 import '../Admin/Dashboard.css'
+import './InicioUsuario.css'
+import PageHeader from '../../components/ui/PageHeader'
+import SurfaceCard from '../../components/ui/SurfaceCard'
+import ProyectoEstadoBadge from '../Proyectos/components/ProyectoEstadoBadge'
 import InvitacionesProyectos from '../../components/InvitacionesProyectos'
 import { formatoRelativo } from '../../utils/tiempo'
 
@@ -37,15 +41,14 @@ export default function InicioUsuario({ sesion }) {
   }, [sesion?.id, esJefeDeProyecto])
 
   return (
-    <div className="dash">
-      <div className="dash__encabezado">
-        <h1 className="dash__saludo">¡Hola, {nombre}!</h1>
-        <p className="dash__subtitulo">Aquí tienes un resumen de tus proyectos en DocAI.</p>
-      </div>
+    <div className="dash inicio-usuario" data-docai-layout="modern">
+      <PageHeader title={`¡Hola, ${nombre}!`} description={esJefeDeProyecto
+        ? 'Aquí tienes tus proyectos a cargo y las invitaciones pendientes en DocAI.'
+        : 'Aquí tienes tus proyectos asignados y las invitaciones pendientes en DocAI.'} />
 
-      <InvitacionesProyectos sesion={sesion} />
+      <InvitacionesProyectos sesion={sesion} visualModerna />
 
-      <section className="dash__card dash__actividad">
+      <SurfaceCard className="dash__card dash__actividad" aria-label="Tus proyectos" aria-busy={cargando}>
         <div className="dash__card-encabezado">
           <h2>
             <span className="dash__punto-brillante" />
@@ -54,7 +57,7 @@ export default function InicioUsuario({ sesion }) {
           <span className="dash__eyebrow">Recientes</span>
         </div>
 
-        {error && <p className="login__error">{error}</p>}
+        {error && <p className="inicio-usuario__error" role="alert">{error}</p>}
 
         {cargando ? (
           <p className="dash__invitacion-vacio">Cargando...</p>
@@ -65,8 +68,7 @@ export default function InicioUsuario({ sesion }) {
                 <span className="dash__punto-brillante dash__evento-punto" />
                 <p className="dash__evento-texto">
                   <span className="dash__evento-fuerte">{proyecto.nombre}</span>
-                  {' · '}
-                  {proyecto.estado}
+                  <ProyectoEstadoBadge estado={proyecto.estado} />
                 </p>
                 <span className="dash__evento-tiempo">
                   {proyecto.fecha_ultima_actividad
@@ -79,7 +81,7 @@ export default function InicioUsuario({ sesion }) {
         ) : (
           <p className="dash__invitacion-vacio">Todavía no formas parte de ningún proyecto.</p>
         )}
-      </section>
+      </SurfaceCard>
     </div>
   )
 }

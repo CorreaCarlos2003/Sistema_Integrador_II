@@ -1,8 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useId, useRef } from 'react'
 import { actorHeaders } from '../../../utils/actor'
-import './ModalNuevoProyecto.css' // We can just add it to Proyectos.css or a new file. Let's create ModalNuevoProyecto.css
+import ModalShell from '../../../components/ui/ModalShell'
+import FormField from '../../../components/ui/FormField'
+import Button from '../../../components/ui/Button'
+import './ModalNuevoProyecto.css'
+import './NuevoProyectoForm.css'
 
 export default function ModalNuevoProyecto({ isOpen, onClose, onProjectCreated }) {
+  const formId = useId()
+  const nameInputRef = useRef(null)
   const [nombre, setNombre] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [responsableId, setResponsableId] = useState('')
@@ -75,30 +81,40 @@ export default function ModalNuevoProyecto({ isOpen, onClose, onProjectCreated }
   if (!isOpen) return null
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-contenido">
-        <div className="modal-header">
-          <h2>Nuevo Proyecto</h2>
-          <button className="modal-close" onClick={onClose}>&times;</button>
-        </div>
-
-        {error && <div className="modal-error">{error}</div>}
-
-        <form onSubmit={handleSubmit} className="modal-form">
-          <div className="form-group form-group-full">
-            <label htmlFor="nombre">Nombre del Proyecto</label>
+    <ModalShell
+      open={isOpen}
+      onClose={onClose}
+      title="Nuevo Proyecto"
+      description="Define el proyecto, su responsable y la fecha estimada de finalización."
+      busy={loading}
+      initialFocusRef={nameInputRef}
+      footer={
+        <>
+          {loading && <span className="proyecto-form__procesando" role="status">Creando proyecto...</span>}
+          <Button onClick={onClose} disabled={loading}>Cancelar</Button>
+          <Button variant="primary" type="submit" form={formId} disabled={loading}>
+            {loading ? 'Creando...' : 'Crear Proyecto'}
+          </Button>
+        </>
+      }
+    >
+      <form id={formId} onSubmit={handleSubmit} className="proyecto-form" aria-busy={loading}>
+        <p className="proyecto-form__nota">Los campos marcados con * son obligatorios.</p>
+        {error && <div className="proyecto-form__error" role="alert">{error}</div>}
+        <fieldset className="proyecto-form__campos" aria-label="Datos del proyecto" disabled={loading}>
+          <FormField htmlFor="nombre" label="Nombre del Proyecto" required className="proyecto-form__full">
             <input
               type="text"
               id="nombre"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               required
-              placeholder="Ej: Migración Cloud 2024"
+              placeholder="Ej: Modernización de infraestructura"
+              ref={nameInputRef}
             />
-          </div>
+          </FormField>
 
-          <div className="form-group form-group-full">
-            <label htmlFor="descripcion">Descripción</label>
+          <FormField htmlFor="descripcion" label="Descripción" required className="proyecto-form__full">
             <textarea
               id="descripcion"
               value={descripcion}
@@ -107,10 +123,11 @@ export default function ModalNuevoProyecto({ isOpen, onClose, onProjectCreated }
               placeholder="Describe el objetivo y alcance del proyecto..."
               rows={4}
             />
-          </div>
+          </FormField>
 
-          <div className="form-group">
-            <label htmlFor="responsable">Responsable</label>
+          <p className="proyecto-form__seccion">Asignación y planificación</p>
+
+          <FormField htmlFor="responsable" label="Responsable" required>
             <select
               id="responsable"
               value={responsableId}
@@ -122,10 +139,9 @@ export default function ModalNuevoProyecto({ isOpen, onClose, onProjectCreated }
                 <option key={u.id} value={u.id}>{u.nombre}</option>
               ))}
             </select>
-          </div>
+          </FormField>
 
-          <div className="form-group">
-            <label htmlFor="cargo_responsable">Cargo del Responsable en el Proyecto (Opcional)</label>
+          <FormField htmlFor="cargo_responsable" label="Cargo del responsable en el proyecto" optional>
             <input
               type="text"
               id="cargo_responsable"
@@ -133,10 +149,9 @@ export default function ModalNuevoProyecto({ isOpen, onClose, onProjectCreated }
               onChange={(e) => setCargoResponsable(e.target.value)}
               placeholder="Ej: Gerente, Líder Técnico..."
             />
-          </div>
+          </FormField>
 
-          <div className="form-group">
-            <label htmlFor="fecha_fin">Fecha de Fin (Estimada)</label>
+          <FormField htmlFor="fecha_fin" label="Fecha de Fin (Estimada)" required>
             <input
               type="date"
               id="fecha_fin"
@@ -144,18 +159,9 @@ export default function ModalNuevoProyecto({ isOpen, onClose, onProjectCreated }
               onChange={(e) => setFechaFin(e.target.value)}
               required
             />
-          </div>
-
-          <div className="modal-footer">
-            <button type="button" className="btn-cancel" onClick={onClose} disabled={loading}>
-              Cancelar
-            </button>
-            <button type="submit" className="btn-submit" disabled={loading}>
-              {loading ? 'Creando...' : 'Crear Proyecto'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          </FormField>
+        </fieldset>
+      </form>
+    </ModalShell>
   )
 }

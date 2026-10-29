@@ -1,22 +1,12 @@
 import { getInitials, getAvatarColors } from '../../../utils/avatarUtils'
 import { formatoRelativo } from '../../../utils/tiempo'
 import ProyectoAccionesMenu from './ProyectoAccionesMenu'
+import ProyectoEstadoBadge from './ProyectoEstadoBadge'
+import SurfaceCard from '../../../components/ui/SurfaceCard'
 
 export default function ProyectoCard({ proyecto, sesion, onSeleccionar, onArchivar, onEliminar }) {
-  const esActivo = proyecto.estado?.toLowerCase() === 'activo'
-  const esPausado = proyecto.estado?.toLowerCase() === 'pausado'
-  const esInactivo = proyecto.archivado || proyecto.estado?.toLowerCase() === 'inactivo'
-
   const miembroActual = (proyecto.miembros || []).find((m) => m.id === sesion?.id)
   const inhabilitado = miembroActual?.activo === false
-
-  // Función para determinar clase del badge
-  const getBadgeClass = () => {
-    if (esActivo) return 'proyecto-card__badge--activo'
-    if (esPausado) return 'proyecto-card__badge--pausado'
-    if (esInactivo) return 'proyecto-card__badge--inactivo'
-    return 'proyecto-card__badge--default'
-  }
 
   // Renderizar avatares de miembros con límite (ej. máx 3)
   const MAX_MIEMBROS = 3
@@ -63,14 +53,16 @@ export default function ProyectoCard({ proyecto, sesion, onSeleccionar, onArchiv
   }
 
   return (
-    <article
+    <SurfaceCard as="article"
       className={`proyecto-card ${inhabilitado ? 'proyecto-card--inhabilitado' : ''}`}
-      onClick={() => onSeleccionar && onSeleccionar(proyecto)}
+      onClick={(e) => onSeleccionar && onSeleccionar(proyecto, e.currentTarget)}
       tabIndex={0}
       role="button"
+      aria-label={`Ver proyecto ${proyecto.nombre}`}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          onSeleccionar && onSeleccionar(proyecto)
+        if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault()
+          onSeleccionar && onSeleccionar(proyecto, e.currentTarget)
         }
       }}
     >
@@ -80,10 +72,7 @@ export default function ProyectoCard({ proyecto, sesion, onSeleccionar, onArchiv
           {inhabilitado && (
             <span className="proyecto-card__aviso-inhabilitado">Acceso inhabilitado</span>
           )}
-          <span className={`proyecto-card__badge ${getBadgeClass()}`}>
-            <span className="proyecto-card__badge-dot"></span>
-            {proyecto.archivado ? 'ARCHIVADO' : proyecto.estado?.toUpperCase()}
-          </span>
+          <ProyectoEstadoBadge estado={proyecto.estado} archivado={proyecto.archivado} />
           <ProyectoAccionesMenu proyecto={proyecto} onArchivar={onArchivar} onEliminar={onEliminar} />
         </div>
       </div>
@@ -175,6 +164,6 @@ export default function ProyectoCard({ proyecto, sesion, onSeleccionar, onArchiv
           </div>
         </div>
       </div>
-    </article>
+    </SurfaceCard>
   )
 }

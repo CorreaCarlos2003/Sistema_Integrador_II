@@ -1,0 +1,16 @@
+.docai-modal.invitacion-usuario { width: min(640px, calc(100vw - 48px)); }
+.invitacion-usuario__proyecto { margin: 0 0 22px; padding: 14px 16px; border: 1px solid #e5e7e3; border-radius: 10px; background: #f8f9f6; }
+.invitacion-usuario__proyecto > span { display: block; margin-bottom: 5px; color: #626b65; font-size: 11px; }
+.invitacion-usuario__proyecto > strong { font-size: 14px; font-weight: 500; line-height: 1.5; overflow-wrap: anywhere; }
+.invitacion-usuario__campos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.invitacion-usuario__completo, .invitacion-usuario__nota, .invitacion-usuario__error { grid-column: 1 / -1; }
+.invitacion-usuario__campos input, .invitacion-usuario__campos select { box-sizing: border-box; }
+.invitacion-usuario__nota { margin: 0; color: #626b65; font-size: 13px; line-height: 1.6; }
+.invitacion-usuario__error { margin: 0; padding: 12px 14px; border: 1px solid #efd8d0; border-radius: 8px; background: #fff5ef; color: #923e28; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.docai-modal.invitacion-resultado { width: min(580px, calc(100vw - 48px)); }
+.invitacion-resultado--enviada .docai-modal__icon { border-color: #d8e9df; background: #edf5f1; color: #2f6b63; }
+.invitacion-resultado--parcial .docai-modal__icon { border-color: #efe1bc; background: #fff8e9; color: #805d18; }
+.invitacion-resultado__correo { margin: 0 0 16px; padding: 14px 16px; border: 1px solid #e5e7e3; border-radius: 10px; background: #f8f9f6; font-size: 14px; font-weight: 500; overflow-wrap: anywhere; line-height: 1.6; }
+.invitacion-resultado__mensaje { margin: 0; color: #626b65; font-size: 14px; line-height: 1.7; }
+.invitacion-resultado__pendiente { display: inline-block; margin-top: 18px; padding: 5px 9px; border: 1px solid #efe1bc; border-radius: 999px; background: #fff8e9; color: #805d18; font-size: 11px; }
+@media (max-width: 600px) { .invitacion-usuario__campos { grid-template-columns: 1fr; } }

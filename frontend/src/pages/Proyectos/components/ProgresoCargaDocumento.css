@@ -1,33 +1,34 @@
 .progreso-carga {
   position: fixed;
-  right: 18px;
-  bottom: 18px;
+  right: 20px;
+  bottom: 20px;
   z-index: 1200;
-  width: min(286px, calc(100vw - 28px));
+  width: min(340px, calc(100vw - 40px));
   box-sizing: border-box;
-  padding: 12px 14px;
-  border: 1px solid rgba(128, 118, 97, 0.22);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.97);
-  box-shadow: 0 8px 24px rgba(28, 28, 24, 0.11);
-  color: #1c1c18;
+  padding: 18px;
+  border: 1px solid #dfe5dc;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(30,42,35,.12);
+  color: #252c29;
+  font-family: var(--fuente-texto, 'Albert Sans', sans-serif);
 }
-
-.progreso-carga__cabecera { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
-.progreso-carga__cabecera button { border: 0; background: none; padding: 0 2px; color: #807661; font-size: 18px; line-height: 1; cursor: pointer; }
-.progreso-carga__archivo, .progreso-carga__destino, .progreso-carga__detalle, .progreso-carga__error { display: block; margin-top: 3px; font-size: 10px; color: #807661; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.progreso-carga__medidor { width: 56px; height: 56px; margin: 10px auto 7px; padding: 5px; border-radius: 50%; background: conic-gradient(#156965 var(--progreso-grados), #ebe8e1 0); box-sizing: border-box; }
-.progreso-carga__medidor > div { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; border-radius: 50%; background: #fff; font: 700 10px var(--fuente-mono, monospace); }
-.progreso-carga__medidor--indeterminado { background: conic-gradient(#f4c430 0 22%, #ebe8e1 22% 100%); animation: progreso-carga-girar 1s linear infinite; }
-.progreso-carga__medidor--indeterminado > div { animation: progreso-carga-girar-inverso 1s linear infinite; }
-.progreso-carga__estado { display: block; text-align: center; font-size: 11px; }
-.progreso-carga__detalle { text-align: center; color: #156965; }
-.progreso-carga__error { white-space: normal; color: #a3311b; }
-.progreso-carga__cancelar { display: block; margin: 9px 0 0 auto; border: 0; border-radius: 5px; background: #f1eee7; padding: 5px 9px; color: #4e4634; font-size: 10px; cursor: pointer; }
-.progreso-carga--completado { border-color: #9bd8d2; }
-.progreso-carga--error { border-color: #efb4a9; }
-
-@keyframes progreso-carga-girar { to { transform: rotate(360deg); } }
-@keyframes progreso-carga-girar-inverso { to { transform: rotate(-360deg); } }
-
-@media (max-width: 520px) { .progreso-carga { right: 14px; bottom: 14px; } }
+.progreso-carga__cabecera { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.progreso-carga__cabecera strong { flex: 1; font-size: 13px; font-weight: 600; }
+.progreso-carga__icono { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; background: #edf3ee; color: #2f6b63; }
+.progreso-carga__cabecera .docai-button { width: 28px; min-height: 28px; padding: 0; border-color: transparent; font-size: 20px; }
+.progreso-carga__archivo { display: block; font-size: 12px; font-weight: 500; overflow-wrap: anywhere; line-height: 1.5; }
+.progreso-carga__destino, .progreso-carga__detalle, .progreso-carga__error { display: block; margin-top: 6px; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; color: #626b65; }
+.progreso-carga__estado-fila { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 16px 0 8px; color: #626b65; font-size: 11px; }
+.progreso-carga__estado { font-weight: 500; }
+.progreso-carga__barra { height: 6px; overflow: hidden; border-radius: 6px; background: #e8ece5; }
+.progreso-carga__barra > span { display: block; height: 100%; border-radius: inherit; background: #2f6b63; }
+.progreso-carga__barra--indeterminada > span { width: 35%; animation: progreso-carga-avanzar 1.5s ease-in-out infinite alternate; }
+.progreso-carga .progreso-carga__cancelar { display: flex; margin: 14px 0 0 auto; min-height: 34px; padding: 6px 10px; font-size: 12px; }
+.progreso-carga--completado { border-color: #cbdcc6; background: #f2f8ed; }
+.progreso-carga--completado .progreso-carga__detalle { color: #2f6b63; }
+.progreso-carga--error { border-color: #efd8d0; }
+.progreso-carga--error .progreso-carga__error { color: #923e28; }
+.progreso-carga--inline { position: static; width: 100%; margin-top: 18px; box-shadow: none; background: #f8faf6; }
+@keyframes progreso-carga-avanzar { from { transform: translateX(0); } to { transform: translateX(185%); } }
+@media (prefers-reduced-motion: reduce) { .progreso-carga__barra--indeterminada > span { animation: none; } }

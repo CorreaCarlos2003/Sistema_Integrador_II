@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { pedirChat } from '../../../utils/chatApi'
 import { actorHeaders } from '../../../utils/actor'
-import { obtenerCambiosComparacion } from '../../../utils/comparacion'
-import { formatoRelativo } from '../../../utils/tiempo'
 import DocumentoPendienteModal from './DocumentoPendienteModal'
 import DocumentoSubidoModal from './DocumentoSubidoModal'
 import SubirDocumentoInfoModal from './SubirDocumentoInfoModal'
 import EstadoRag from './EstadoRag'
+import Button from '../../../components/ui/Button'
+import ChatHistorial from './ChatHistorial'
+import ChatMensajes from './ChatMensajes'
+import { DOCUMENTO_ACCEPT, validarArchivoDocumento } from '../../../utils/documentoArchivo'
 import './ChatProyecto.css'
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
-const EXTENSIONES_PERMITIDAS = ['.docx', '.pdf', '.xlsx', '.pptx', '.txt', '.md']
-const TAMANO_MAXIMO_BYTES = 30 * 1024 * 1024 // 30MB
 
 const IconVolver = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -19,19 +19,7 @@ const IconVolver = () => (
   </svg>
 )
 
-const IconMas = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-    <line x1="12" y1="5" x2="12" y2="19" />
-    <line x1="5" y1="12" x2="19" y2="12" />
-  </svg>
-)
 
-const IconBuscarMini = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="11" cy="11" r="7" />
-    <path d="m21 21-3.5-3.5" />
-  </svg>
-)
 
 const IconDocMini = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -47,11 +35,6 @@ const IconEnviar = () => (
   </svg>
 )
 
-const IconChispa = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z" />
-  </svg>
-)
 
 const IconClip = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -70,80 +53,6 @@ function grupoDeFecha(fecha) {
   if (fecha >= inicioAyer) return 'Ayer'
   if (fecha >= inicioSemana) return 'Esta semana'
   return 'Anteriores'
-}
-
-function TextoConCitas({ mensaje }) {
-  const numeros = new Set((mensaje.citas || []).map((cita) => cita.numero))
-  return (
-    <p className="chat-proyecto__respuesta">
-      {mensaje.contenido.split(/(\[\d+\])/g).map((parte, indice) => {
-        const numero = /^\[(\d+)\]$/.exec(parte)?.[1]
-        return numero && numeros.has(Number(numero)) ? (
-          <a key={indice} href={`#cita-${mensaje.id}-${numero}`}>{parte}</a>
-        ) : <span key={indice}>{parte}</span>
-      })}
-    </p>
-  )
-}
-
-function ExtractoComparacion({ etiqueta, texto, mensaje }) {
-  const numero = Number(/\[(\d+)\]\s*$/.exec(texto)?.[1])
-  const cita = mensaje.citas?.find((elemento) => elemento.numero === numero)
-  const contenido = texto.replace(/\s*\[\d+\]\s*$/, '').trim()
-  const sinContenido = /^no existía contenido\.?$/i.test(contenido)
-  const extenso = contenido.length > 240
-
-  return (
-    <div className="chat-proyecto__comparacion-bloque">
-      <div className="chat-proyecto__comparacion-bloque-cabecera">
-        <strong>{etiqueta}</strong>
-        {cita && <a href={`#cita-${mensaje.id}-${numero}`}>{cita.documento} · v{cita.version} [{numero}]</a>}
-      </div>
-      {sinContenido ? <p className="chat-proyecto__comparacion-vacio">No existía contenido.</p> : (
-        <>
-          <p>{extenso ? `${contenido.slice(0, 240).trimEnd()}…` : contenido}</p>
-          {extenso && (
-            <details>
-              <summary>Ver texto completo</summary>
-              <p>{contenido}</p>
-            </details>
-          )}
-        </>
-      )}
-    </div>
-  )
-}
-
-function ComparacionVista({ mensaje }) {
-  const cambios = obtenerCambiosComparacion(mensaje.contenido)
-  if (!cambios) return <TextoConCitas mensaje={mensaje} />
-
-  return (
-    <div className="chat-proyecto__comparacion-resultado">
-      <p className="chat-proyecto__comparacion-resumen">
-        {cambios.length} cambio{cambios.length === 1 ? '' : 's'} textual{cambios.length === 1 ? '' : 'es'} encontrado{cambios.length === 1 ? '' : 's'}
-      </p>
-      <div className="chat-proyecto__comparacion-tarjetas">
-        {cambios.map((cambio) => (
-          <article className="chat-proyecto__comparacion-tarjeta" key={cambio.numero}>
-            <div className="chat-proyecto__comparacion-tarjeta-cabecera">
-              <span className={`chat-proyecto__comparacion-tipo chat-proyecto__comparacion-tipo--${cambio.tipo.toLowerCase()}`}>{cambio.tipo}</span>
-              <span>Cambio {cambio.numero}</span>
-            </div>
-            <div className="chat-proyecto__comparacion-columnas">
-              <ExtractoComparacion etiqueta="Antes" texto={cambio.antes} mensaje={mensaje} />
-              <ExtractoComparacion etiqueta="Después" texto={cambio.despues} mensaje={mensaje} />
-            </div>
-          </article>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function etiquetaUbicacion(cita) {
-  if (cita.pagina) return `Pág. ${cita.pagina}`
-  return cita.seccion || 'Ubicación no disponible'
 }
 
 export default function ChatProyecto({ proyecto, sesion, onVolver, estadoRag }) {
@@ -439,13 +348,9 @@ export default function ChatProyecto({ proyecto, sesion, onVolver, estadoRag }) 
     evento.target.value = ''
     if (!archivo) return
 
-    const extension = `.${archivo.name.split('.').pop()?.toLowerCase() || ''}`
-    if (!EXTENSIONES_PERMITIDAS.includes(extension)) {
-      setError('Solo se admiten documentos Word (.docx), PDF, Excel (.xlsx), PowerPoint (.pptx), Bloc de notas (.txt) o Markdown (.md).')
-      return
-    }
-    if (archivo.size > TAMANO_MAXIMO_BYTES) {
-      setError('El archivo supera el límite de 30MB permitido.')
+    const errorArchivo = validarArchivoDocumento(archivo)
+    if (errorArchivo) {
+      setError(errorArchivo)
       return
     }
 
@@ -478,63 +383,32 @@ export default function ChatProyecto({ proyecto, sesion, onVolver, estadoRag }) 
   }
 
   return (
-    <div className="chat-proyecto">
+    <div className="chat-proyecto" data-docai-layout="modern">
       <div className="chat-proyecto__header">
-        <div className="chat-proyecto__breadcrumb">
-          <button type="button" className="chat-proyecto__volver" onClick={onVolver}><IconVolver />Volver a {proyecto.nombre}</button>
-          <span className="chat-proyecto__separador">/</span><span>Proyectos</span>
-          <span className="chat-proyecto__separador">/</span><span>{proyecto.nombre}</span>
-          <span className="chat-proyecto__separador">/</span><span className="chat-proyecto__crumb-activo">Chat IA</span>
-        </div>
-        <div className="chat-proyecto__titulo">{conversacionActiva?.titulo || 'Chat documental'}</div>
+        <nav className="chat-proyecto__breadcrumb" aria-label="Ubicación del chat">
+          <Button className="chat-proyecto__volver" onClick={onVolver}><IconVolver />Volver al proyecto</Button>
+          <span className="chat-proyecto__separador" aria-hidden="true">/</span><span className="chat-proyecto__proyecto-nombre" title={proyecto.nombre}>{proyecto.nombre}</span>
+          <span className="chat-proyecto__separador" aria-hidden="true">/</span><span className="chat-proyecto__crumb-activo" aria-current="page">Chat IA</span>
+        </nav>
+        <div className="chat-proyecto__titulo-fila"><h1 className="chat-proyecto__titulo">{conversacionActiva?.titulo || 'Chat documental'}</h1>{mostrarArchivadas && conversacionActiva && <span className="chat-proyecto__archivada">Archivada</span>}</div>
       </div>
 
       <div className="chat-proyecto__layout">
-        <aside className="chat-proyecto__historial">
-          <div className="chat-proyecto__historial-nueva">
-            <button type="button" onClick={handleNuevaConversacion} disabled={ocupado}><IconMas />Nueva conversación</button>
-          </div>
-          <div className="chat-proyecto__historial-buscar">
-            <IconBuscarMini />
-            <input type="search" placeholder="Buscar conversación..." value={busquedaConversacion}
-              onChange={(evento) => setBusquedaConversacion(evento.target.value)} />
-          </div>
-          <div className="chat-proyecto__historial-filtro">
-            <button type="button" className={!mostrarArchivadas ? 'activo' : ''} onClick={() => cambiarArchivadas(false)} disabled={ocupado}>Activas</button>
-            <button type="button" className={mostrarArchivadas ? 'activo' : ''} onClick={() => cambiarArchivadas(true)} disabled={ocupado}>Archivadas</button>
-          </div>
-          <div className="chat-proyecto__historial-lista">
-            {cargandoLista && <p className="chat-proyecto__estado-lista">Cargando conversaciones...</p>}
-            {!cargandoLista && conversacionesFiltradas.length === 0 && <p className="chat-proyecto__estado-lista">No hay conversaciones {mostrarArchivadas ? 'archivadas' : 'activas'}.</p>}
-            {gruposConversaciones.map((grupo) => (
-              <div key={grupo.nombre} className="chat-proyecto__historial-grupo">
-                <span className="chat-proyecto__historial-grupo-titulo">{grupo.nombre}</span>
-                {grupo.items.map((conversacion) => (
-                  <button type="button" key={conversacion.id} disabled={ocupado}
-                    className={`chat-proyecto__historial-item ${conversacion.id === conversacionActivaId ? 'chat-proyecto__historial-item--activo' : ''}`}
-                    onClick={() => seleccionarConversacion(conversacion.id)}>
-                    <span className="chat-proyecto__historial-item-titulo">{conversacion.titulo}</span>
-                    <span className="chat-proyecto__historial-item-fecha">{formatoRelativo(new Date(conversacion.fecha_actualizacion || conversacion.fecha))}</span>
-                  </button>
-                ))}
-              </div>
-            ))}
-            {conversaciones.length < total && (
-              <button type="button" className="chat-proyecto__cargar-mas" disabled={ocupado} onClick={() => cargarLista(mostrarArchivadas, pagina + 1).catch((fallo) => setError(fallo.message))}>
-                Cargar más
-              </button>
-            )}
-          </div>
-        </aside>
+        <ChatHistorial grupos={gruposConversaciones} cargando={cargandoLista} ocupado={ocupado}
+          busqueda={busquedaConversacion} onBuscar={setBusquedaConversacion} mostrarArchivadas={mostrarArchivadas}
+          onCambiarArchivadas={cambiarArchivadas} conversacionActivaId={conversacionActivaId}
+          sinResultados={conversacionesFiltradas.length === 0} hayMas={conversaciones.length < total}
+          onSeleccionar={seleccionarConversacion} onNueva={handleNuevaConversacion}
+          onCargarMas={() => cargarLista(mostrarArchivadas, pagina + 1).catch((fallo) => setError(fallo.message))} />
 
-        <main className="chat-proyecto__central">
+        <section className="chat-proyecto__central" aria-label="Conversación actual">
           <EstadoRag estado={estadoRag?.estado} mensaje={estadoRag?.mensaje} onReintentar={estadoRag?.refrescar} />
           <div className="chat-proyecto__banner">
             <IconDocMini />
             <span>{documentoIds.length ? `${documentoIds.length} fuente${documentoIds.length === 1 ? '' : 's'} seleccionada${documentoIds.length === 1 ? '' : 's'}` : `Todas las fuentes vigentes de ${proyecto.nombre}`}</span>
             <div className="chat-proyecto__banner-acciones">
-              <button type="button" className={herramienta === 'fuentes' ? 'activo' : ''} onClick={() => setHerramienta(herramienta === 'fuentes' ? null : 'fuentes')}>Fuentes</button>
-              <button type="button" className={herramienta === 'comparar' ? 'activo' : ''} disabled={!ragListo} onClick={() => setHerramienta(herramienta === 'comparar' ? null : 'comparar')}>Comparar</button>
+              <Button type="button" className={herramienta === 'fuentes' ? 'activo' : ''} aria-expanded={herramienta === 'fuentes'} onClick={() => setHerramienta(herramienta === 'fuentes' ? null : 'fuentes')}>Fuentes</Button>
+              <Button type="button" className={herramienta === 'comparar' ? 'activo' : ''} aria-expanded={herramienta === 'comparar'} disabled={!ragListo} onClick={() => setHerramienta(herramienta === 'comparar' ? null : 'comparar')}>Comparar</Button>
             </div>
           </div>
 
@@ -551,7 +425,7 @@ export default function ChatProyecto({ proyecto, sesion, onVolver, estadoRag }) 
                 ))}
                 {documentos.length === 0 && <span>No hay fuentes vigentes disponibles.</span>}
               </div>
-              {documentoIds.length > 0 && <button type="button" className="chat-proyecto__enlace" onClick={() => setDocumentoIds([])}>Usar todas las fuentes</button>}
+              {documentoIds.length > 0 && <Button type="button" className="chat-proyecto__enlace" onClick={() => setDocumentoIds([])}>Usar todas las fuentes</Button>}
             </div>
           )}
 
@@ -576,7 +450,7 @@ export default function ChatProyecto({ proyecto, sesion, onVolver, estadoRag }) 
                   <input value={seccion} onChange={(evento) => setSeccion(evento.target.value)} maxLength={255} placeholder="Ej.: Ingresos" />
                 </label>
               </div>
-              <button type="submit" className="chat-proyecto__boton-primario" disabled={!ragListo || ocupado || !origenId || !destinoId || origenId === destinoId || mostrarArchivadas}>Comparar</button>
+              <Button type="submit" variant="primary" className="chat-proyecto__boton-primario" disabled={!ragListo || ocupado || !origenId || !destinoId || origenId === destinoId || mostrarArchivadas}>Comparar</Button>
             </form>
           )}
 
@@ -585,81 +459,41 @@ export default function ChatProyecto({ proyecto, sesion, onVolver, estadoRag }) 
               {editandoTitulo ? (
                 <form onSubmit={handleRenombrar}>
                   <input value={titulo} onChange={(evento) => setTitulo(evento.target.value)} maxLength={255} autoFocus aria-label="Título de la conversación" />
-                  <button type="submit" disabled={ocupado || !titulo.trim()}>Guardar</button>
-                  <button type="button" onClick={() => setEditandoTitulo(false)}>Cancelar</button>
+                  <Button type="submit" disabled={ocupado || !titulo.trim()}>Guardar</Button>
+                  <Button type="button" onClick={() => setEditandoTitulo(false)}>Cancelar</Button>
                 </form>
               ) : (
                 <>
-                  <button type="button" disabled={ocupado} onClick={() => { setTitulo(conversacionActiva.titulo); setEditandoTitulo(true) }}>Renombrar</button>
-                  <button type="button" disabled={ocupado} onClick={handleArchivar}>{mostrarArchivadas ? 'Restaurar' : 'Archivar'}</button>
+                  <Button type="button" disabled={ocupado} onClick={() => { setTitulo(conversacionActiva.titulo); setEditandoTitulo(true) }}>Renombrar</Button>
+                  <Button type="button" disabled={ocupado} onClick={handleArchivar}>{mostrarArchivadas ? 'Restaurar' : 'Archivar'}</Button>
                 </>
               )}
             </div>
           )}
 
-          {error && <div className="chat-proyecto__aviso" role="alert">{error}<button type="button" onClick={() => setError('')} aria-label="Cerrar aviso">×</button></div>}
+          {error && <div className="chat-proyecto__aviso" role="alert">{error}<Button type="button" onClick={() => setError('')} aria-label="Cerrar aviso">×</Button></div>}
 
-          <div className="chat-proyecto__mensajes">
-            {cargandoDetalle && <div className="chat-proyecto__vacio">Cargando mensajes...</div>}
-            {!cargandoDetalle && !detalle?.mensajes?.length && (
-              <div className="chat-proyecto__vacio">Pregunta sobre los documentos del proyecto o selecciona dos versiones para compararlas.</div>
-            )}
-            {!cargandoDetalle && detalle?.mensajes?.map((mensaje) => mensaje.rol === 'usuario' ? (
-              <div key={mensaje.id} className="chat-proyecto__mensaje-usuario">
-                <div className="chat-proyecto__usuario-contenido">
-                  <div className="chat-proyecto__burbuja-usuario">{mensaje.contenido}</div>
-                  {mensaje.estado === 'fallido' && (
-                    <div className="chat-proyecto__mensaje-fallido">
-                      No se pudo completar esta {mensaje.tipo === 'comparacion' ? 'comparación' : 'respuesta'}.
-                      {mensaje.tipo === 'chat' && <button type="button" disabled={ocupado || !ragListo} onClick={() => handleReintentar(mensaje.id)}>Reintentar</button>}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div key={mensaje.id} className={`chat-proyecto__mensaje-asistente ${mensaje.tipo === 'comparacion' ? 'chat-proyecto__mensaje-asistente--comparacion' : ''}`}>
-                <div className="chat-proyecto__remitente"><IconChispa />DocAI</div>
-                {mensaje.tipo === 'comparacion' ? <ComparacionVista mensaje={mensaje} /> : <TextoConCitas mensaje={mensaje} />}
-                {mensaje.citas?.length > 0 && (
-                  <div className={`chat-proyecto__fragmentos ${mensaje.tipo === 'comparacion' ? 'chat-proyecto__fragmentos--comparacion' : ''}`}>
-                    {mensaje.citas.map((cita) => (
-                      <div key={cita.numero} id={`cita-${mensaje.id}-${cita.numero}`} className="chat-proyecto__fragmento">
-                        <div className="chat-proyecto__fragmento-fuente">
-                          <span className="chat-proyecto__cita">{cita.numero}</span>
-                          <span className="chat-proyecto__fragmento-doc">{cita.documento}</span>
-                          <span className="chat-proyecto__cita-ubicacion">v{cita.version} · {etiquetaUbicacion(cita)}</span>
-                        </div>
-                        {mensaje.tipo === 'comparacion' ? (
-                          <details><summary>Ver evidencia completa</summary><p>{cita.extracto}</p></details>
-                        ) : <p>{cita.extracto}</p>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-            {ocupado && <div className="chat-proyecto__escribiendo">DocAI está procesando la solicitud...</div>}
-            <div ref={finMensajesRef} />
-          </div>
+          <ChatMensajes detalle={detalle} cargandoDetalle={cargandoDetalle} ocupado={ocupado}
+            ragListo={ragListo} onReintentar={handleReintentar} finMensajesRef={finMensajesRef} />
 
           <form className="chat-proyecto__form" onSubmit={handleEnviar}>
-            <button type="button" className="chat-proyecto__adjuntar" onClick={handleAdjuntarClick}
+            <Button type="button" className="chat-proyecto__adjuntar" onClick={handleAdjuntarClick}
               disabled={!ragListo || ocupado || mostrarArchivadas || subiendoDocumento} aria-label="Adjuntar documento">
               <IconClip />
-            </button>
-            <input type="text" placeholder={!ragListo ? 'Preparando el asistente documental...' : mostrarArchivadas ? 'Restaura la conversación para continuar' : 'Pregunta algo sobre las fuentes del proyecto...'}
+            </Button>
+            <input type="text" aria-label="Pregunta sobre los documentos" placeholder={!ragListo ? 'Preparando el asistente documental...' : mostrarArchivadas ? 'Restaura la conversación para continuar' : 'Pregunta algo sobre las fuentes del proyecto...'}
               value={pregunta} onChange={(evento) => setPregunta(evento.target.value)} maxLength={2000}
               disabled={!ragListo || ocupado || mostrarArchivadas} />
-            <button type="submit" disabled={!ragListo || ocupado || mostrarArchivadas || !pregunta.trim()} aria-label="Enviar pregunta"><IconEnviar /></button>
+            <Button type="submit" disabled={!ragListo || ocupado || mostrarArchivadas || !pregunta.trim()} variant="primary" aria-label="Enviar pregunta"><IconEnviar /></Button>
           </form>
           <input
             ref={inputArchivoRef}
             type="file"
-            accept=".docx,.pdf,.xlsx,.pptx,.txt,.md"
+            accept={DOCUMENTO_ACCEPT}
             style={{ display: 'none' }}
             onChange={handleArchivoSeleccionado}
           />
-        </main>
+        </section>
       </div>
 
       <SubirDocumentoInfoModal
