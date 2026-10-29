@@ -1,12 +1,16 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import './Login.css'
-import documentoIcono from '../../assets/login/documento-icono.svg'
+import DocAILogo from '../../components/ui/DocAILogo'
 import ojoIcono from '../../assets/login/ojo-icono.svg'
-import escudoIcono from '../../assets/login/escudo-icono.svg'
+import Button from '../../components/ui/Button'
+import FormField from '../../components/ui/FormField'
+import LoginVisual from './LoginVisual'
+import RecuperarAcceso from './RecuperarAcceso'
 
 const API_URL = ''
 
 export default function Login({ onLoginExitoso }) {
+  const recoveryOriginRef = useRef(null)
   const [correo, setCorreo] = useState('')
   const [contrasena, setContrasena] = useState('')
   const [mostrarContrasena, setMostrarContrasena] = useState(false)
@@ -74,83 +78,57 @@ export default function Login({ onLoginExitoso }) {
     }
   }
 
+  const abrirRecuperacion = (event) => {
+    recoveryOriginRef.current = event.currentTarget
+    setError('')
+    setEnviado(false)
+    setOlvido(true)
+  }
+
   const volverAIniciarSesion = () => {
     setOlvido(false)
     setEnviado(false)
     setError('')
+    requestAnimationFrame(() => {
+      const origin = recoveryOriginRef.current
+      if (origin?.isConnected) origin.focus()
+      else document.querySelector(origin?.classList.contains('login__forgot-inline') ? '.login__forgot-inline' : '.login__ayuda button')?.focus()
+    })
   }
 
   return (
-    <div className="login">
+    <div className="login login--modern">
       <main className="login__main">
-        <div className="login__card">
+        <section className="login__card" aria-label="Acceso a DocAI">
+          <div className="login__brand"><DocAILogo size={32} /></div>
           <div className="login__marca">
-            <div className="login__logo">
-              <img className="login__logo-icono" src={documentoIcono} alt="" />
-              <span className="login__logo-destello" />
-            </div>
-            <h2 className="login__nombre">Doc/AI</h2>
-            <h1 className="login__titulo">
-              {olvido ? 'Recuperar contraseña' : 'Iniciar sesión'}
+            <p className="login__eyebrow"><span />Tu espacio de trabajo inteligente</p>
+            <h1 className={`login__titulo ${olvido ? 'login__titulo--recovery' : ''}`}>
+              {olvido ? 'Recuperar contraseña' : <>Bienvenido<br />de nuevo<span className="login__title-dot">.</span></>}
             </h1>
+            <p className="login__descripcion">{olvido ? 'Solicita ayuda para volver a tu espacio de trabajo.' : 'Donde tus proyectos, documentos e ideas trabajan juntos.'}</p>
           </div>
 
           {olvido ? (
-            <form className="login__formulario" onSubmit={manejarRecuperar}>
-              <div className="login__campo">
-                <label className="login__etiqueta" htmlFor="correo">
-                  Correo electrónico
-                </label>
-                <input
-                  id="correo"
-                  className="login__input"
-                  type="email"
-                  placeholder="admin@docai.com"
-                  value={correo}
-                  onChange={(e) => setCorreo(e.target.value)}
-                  required
-                />
-              </div>
-
-              {error && <p className="login__error">{error}</p>}
-              {enviado && (
-                <p className="login__ok">
-                  Si el correo existe, te enviaremos tu contraseña.
-                </p>
-              )}
-
-              <button className="login__boton" type="submit" disabled={cargando}>
-                {cargando ? 'Enviando...' : 'Enviar'}
-              </button>
-              <button
-                className="login__olvido"
-                type="button"
-                onClick={volverAIniciarSesion}
-              >
-                Volver al inicio de sesión
-              </button>
-            </form>
+            <RecuperarAcceso correo={correo} onCorreoChange={setCorreo} onSubmit={manejarRecuperar} onVolver={volverAIniciarSesion} cargando={cargando} error={error} enviado={enviado} />
           ) : (
             <form className="login__formulario" onSubmit={manejarSubmit}>
-              <div className="login__campo">
-                <label className="login__etiqueta" htmlFor="correo">
-                  Correo electrónico
-                </label>
+              <FormField htmlFor="correo" label="Correo electrónico">
                 <input
                   id="correo"
                   className="login__input"
                   type="email"
-                  placeholder="admin@docai.com"
+                  placeholder="nombre@empresa.com"
                   value={correo}
                   onChange={(e) => setCorreo(e.target.value)}
                   required
+                  autoComplete="username"
+                  disabled={cargando}
                 />
-              </div>
+              </FormField>
 
-              <div className="login__campo">
-                <label className="login__etiqueta" htmlFor="contrasena">
-                  Contraseña
-                </label>
+              <div className="login__password-field">
+              <FormField htmlFor="contrasena" label="Contraseña">
                 <div className="login__input-envoltura">
                   <input
                     id="contrasena"
@@ -159,10 +137,15 @@ export default function Login({ onLoginExitoso }) {
                     value={contrasena}
                     onChange={(e) => setContrasena(e.target.value)}
                     required
+                    placeholder="Ingresa tu contraseña"
+                    autoComplete="current-password"
+                    disabled={cargando}
                   />
                   <button
                     type="button"
                     className="login__alternar-contrasena"
+                    disabled={cargando}
+                    aria-pressed={mostrarContrasena}
                     onClick={() => setMostrarContrasena((v) => !v)}
                     aria-label={
                       mostrarContrasena ? 'Ocultar contraseña' : 'Mostrar contraseña'
@@ -171,54 +154,38 @@ export default function Login({ onLoginExitoso }) {
                     <img src={ojoIcono} alt="" />
                   </button>
                 </div>
+              </FormField>
+                <button className="login__olvido login__forgot-inline" type="button" disabled={cargando} onClick={abrirRecuperacion}>¿La olvidaste?</button>
               </div>
 
               <div className="login__utilidades">
                 <label className="login__recordar">
                   <input
                     type="checkbox"
+                    disabled={cargando}
                     checked={recordarme}
                     onChange={(e) => setRecordarme(e.target.checked)}
                   />
                   Recordarme
                 </label>
-                <button
-                  className="login__olvido"
-                  type="button"
-                  onClick={() => setOlvido(true)}
-                >
-                  ¿Olvidaste tu contraseña?
-                </button>
+
               </div>
 
-              {error && <p className="login__error">{error}</p>}
+              {error && <p className="login__error" role="alert">{error}</p>}
 
-              <button className="login__boton" type="submit" disabled={cargando}>
-                {cargando ? 'Ingresando...' : 'Ingresar al sistema'}
-              </button>
+              <Button variant="primary" className="login__boton" type="submit" disabled={cargando}>
+                {cargando ? 'Ingresando...' : <>Iniciar sesión <span aria-hidden="true">→</span></>}
+              </Button>
 
-              <div className="login__seguridad">
-                <img src={escudoIcono} alt="" />
-                <span>Cifrado TLS 1.3 de extremo a extremo •</span>
-              </div>
+
             </form>
           )}
 
-          <nav className="login__enlaces">
-            <span>Estatus del Sistema</span>
-            <span aria-hidden="true">•</span>
-            <span>Política de Custodia</span>
-            <span aria-hidden="true">•</span>
-            <span>Soporte Técnico</span>
-          </nav>
-        </div>
+          {!olvido && <p className="login__ayuda">¿Problemas para ingresar? <button type="button" className="login__olvido" disabled={cargando} onClick={abrirRecuperacion}>Recupera tu acceso</button></p>}
+          <footer className="login__pie"><span>© DocAI · Tu conocimiento, conectado.</span></footer>
+        </section>
+        <LoginVisual />
       </main>
-
-      <footer className="login__pie">
-        <span>DOC/AI</span>
-        <span aria-hidden="true">•</span>
-        <span>© 2026</span>
-      </footer>
     </div>
   )
 }
