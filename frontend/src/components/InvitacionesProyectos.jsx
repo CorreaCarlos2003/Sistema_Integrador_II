@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Button from './ui/Button'
 
 async function pedir(ruta, opciones = {}) {
   const respuesta = await fetch(ruta, {
@@ -19,7 +20,8 @@ function formatFechaCorta(iso) {
   return fecha.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', '')
 }
 
-export default function InvitacionesProyectos({ sesion }) {
+export default function InvitacionesProyectos({ sesion, visualModerna = false }) {
+  const Control = visualModerna ? Button : 'button'
   const [invitaciones, setInvitaciones] = useState([])
   const [cargando, setCargando] = useState(true)
   const [procesandoId, setProcesandoId] = useState(null)
@@ -85,22 +87,23 @@ export default function InvitacionesProyectos({ sesion }) {
                 </span>
               </div>
               <div className="dash__invitacion-acciones">
-                <button
+                <Control
                   type="button"
-                  className="dash__btn-aceptar"
+                  className={visualModerna ? '' : 'dash__btn-aceptar'}
+                  {...(visualModerna ? { variant: 'primary' } : {})}
                   disabled={procesandoId === inv.proyecto_id}
                   onClick={() => responderInvitacion(inv.proyecto_id, true)}
                 >
                   Aceptar
-                </button>
-                <button
+                </Control>
+                <Control
                   type="button"
-                  className="dash__btn-cancelar"
+                  className={visualModerna ? '' : 'dash__btn-cancelar'}
                   disabled={procesandoId === inv.proyecto_id}
                   onClick={() => responderInvitacion(inv.proyecto_id, false)}
                 >
                   Cancelar solicitud
-                </button>
+                </Control>
               </div>
             </li>
           ))}

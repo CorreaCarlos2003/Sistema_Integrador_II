@@ -1,0 +1,105 @@
+.docai-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.docai-page-header__copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 9px;
+}
+
+.docai-page-header__title {
+  margin: 0;
+  color: var(--docai-pilot-ink, #252c29);
+  font-family: var(--fuente-texto, 'Albert Sans', sans-serif);
+  font-size: clamp(28px, 2.4vw, 36px);
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -1px;
+  overflow-wrap: anywhere;
+}
+
+.docai-page-header__description {
+  margin: 0;
+  max-width: 640px;
+  color: var(--docai-pilot-muted, #626b65);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.docai-page-header__actions {
+  flex-shrink: 0;
+  padding-top: 4px;
+}
+
+.docai-surface {
+  padding: 24px;
+  border: 1px solid var(--docai-pilot-border, #e5e7e3);
+  border-radius: var(--docai-radius-card, 14px);
+  background: var(--docai-pilot-surface, #fff);
+}
+
+.docai-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--docai-control-height, 40px);
+  padding: 9px 14px;
+  border: 1px solid var(--docai-pilot-border, #e5e7e3);
+  border-radius: var(--docai-radius-control, 8px);
+  background: #fff;
+  color: var(--docai-pilot-ink, #252c29);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.docai-button:hover:enabled {
+  background: #f4f6f3;
+  border-color: #cdd6cf;
+}
+
+.docai-button--primary {
+  background: var(--docai-pilot-accent, #2f6b63);
+  border-color: var(--docai-pilot-accent, #2f6b63);
+  color: #fff;
+}
+
+.docai-button--primary:hover:enabled {
+  background: #25564f;
+  border-color: #25564f;
+}
+
+.docai-button--danger {
+  background: #ab3515;
+  border-color: #ab3515;
+  color: #fff;
+}
+
+.docai-button--danger:hover:enabled {
+  background: #8c2a11;
+  border-color: #8c2a11;
+  color: #fff;
+}
+
+.docai-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.docai-button:focus-visible {
+  outline: 2px solid var(--docai-pilot-accent, #2f6b63);
+  outline-offset: 3px;
+}
+
+/* Los iconos conservan sus dimensiones al compartir espacio con el texto. */
+.docai-button > svg {
+  flex-shrink: 0;
+}

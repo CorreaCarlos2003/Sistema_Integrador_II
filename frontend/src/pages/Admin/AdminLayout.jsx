@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import './AdminLayout.css'
+import DocAILogo from '../../components/ui/DocAILogo'
+import '../../styles/modern-tokens.css'
 import {
-  IconLogoDocAI,
   IconNavInicio,
   IconNavProyectos,
   IconNavUsuarios,
@@ -22,20 +23,16 @@ const SECCIONES = [
   { clave: 'reportes', etiqueta: 'Reportes', Icono: IconNavReportes },
 ]
 
-export default function AdminLayout({ activo, onNavegar, sesion, onCerrarSesion, children }) {
+export default function AdminLayout({ activo, onNavegar, sesion, onCerrarSesion, children, pilotoVisual = false }) {
   const [menuAbierto, setMenuAbierto] = useState(false)
   const seccionesPermitidas = obtenerSeccionesPermitidas(sesion?.rol)
   const secciones = SECCIONES.filter(({ clave }) => seccionesPermitidas.includes(clave))
 
   return (
-    <div className="panel">
+    <div className={pilotoVisual ? 'panel panel--visual-pilot' : 'panel'}>
       <aside className="panel__sidebar">
         <div className="panel__marca">
-          <div className="panel__marca-caja">
-            <span className="panel__marca-esquina" />
-            <IconLogoDocAI className="panel__marca-icono" />
-          </div>
-          <span className="panel__marca-texto">doc/ai</span>
+          <DocAILogo size={38} />
         </div>
 
         <p className="panel__nav-etiqueta">Navegación</p>
@@ -67,6 +64,7 @@ export default function AdminLayout({ activo, onNavegar, sesion, onCerrarSesion,
 
       <div className="panel__cuerpo">
         <header className="panel__topbar">
+          {pilotoVisual && <span className="panel__titulo-piloto">{SECCIONES.find(({ clave }) => clave === activo)?.etiqueta}</span>}
           <div className="panel__topbar-acciones">
             <div className="panel__cuenta">
               <button

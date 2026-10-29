@@ -1,0 +1,12 @@
+.docai-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  flex-shrink: 0;
+  color: #252c29;
+  font: 600 24px/1.2 'Albert Sans', sans-serif;
+  letter-spacing: -0.8px;
+  white-space: nowrap;
+}
+.docai-logo__symbol { display: block; flex-shrink: 0; object-fit: contain; }
+.docai-logo__name > span { color: #2f6b63; }

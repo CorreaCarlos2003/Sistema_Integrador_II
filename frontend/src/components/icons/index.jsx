@@ -169,6 +169,12 @@ export const IconDiagnosticoIA = (p) => (
   </svg>
 )
 
+export const IconSubirArchivo = (p) => (
+  <svg {...base} width={p.size ?? 16} height={p.size ?? 16} {...p}>
+    <path d="M12 3v12m-5-7 5-5 5 5M5 17v4h14v-4" />
+  </svg>
+)
+
 export const IconFlechaSubida = (p) => (
   <svg width={13.3333} height={8} viewBox="0 0 13.3333 8" fill="none" xmlns="http://www.w3.org/2000/svg" {...p}>
     <path d="M0.933333 8L0 7.06667L4.93333 2.1L7.6 4.76667L11.0667 1.33333H9.33333V0H13.3333V4H12V2.26667L7.6 6.66667L4.93333 4L0.933333 8Z" fill="currentColor" />

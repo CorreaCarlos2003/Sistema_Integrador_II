@@ -1,0 +1,13 @@
+/* Tokens aditivos: no sustituyen las variables que consumen las vistas antiguas. */
+.panel--visual-pilot {
+  --docai-pilot-canvas: #eaeae7;
+  --docai-pilot-sidebar: #f7f7f5;
+  --docai-pilot-surface: #fff;
+  --docai-pilot-border: #e5e7e3;
+  --docai-pilot-ink: #252c29;
+  --docai-pilot-muted: #626b65;
+  --docai-pilot-accent: #2f6b63;
+  --docai-radius-card: 14px;
+  --docai-radius-control: 8px;
+  --docai-control-height: 40px;
+}

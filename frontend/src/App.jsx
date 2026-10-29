@@ -76,6 +76,7 @@ function App() {
       onNavegar={setSeccion}
       sesion={sesion}
       onCerrarSesion={cerrarSesion}
+      pilotoVisual={seccionActiva === "inicio" || seccionActiva === "proyectos" || seccionActiva === "usuarios" || seccionActiva === "roles" || seccionActiva === "historial" || seccionActiva === "reportes"}
     >
       {seccionActiva === "inicio" ? (
         sesion.rol === "Administrador" ? (
