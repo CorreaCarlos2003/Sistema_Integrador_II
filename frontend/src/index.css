@@ -18,14 +18,16 @@
   --color-border-strong: #c8d3dc;
   --color-gold-soft: #fbf4e6;
   --color-gold-ink: #73561d;
-  --color-highlight-gold: #e5ca91;
-  --color-highlight-blue: #c6d9e7;
-  --color-highlight-base: #f1ede6;
-  --color-highlight-border: #b8c9d6;
+  --color-highlight-gold: #e9d2a4;
+  --color-highlight-blue: #c5d8e4;
+  --color-highlight-base: #f5f1e9;
+  --color-highlight-border: #c8d3dc;
   --color-highlight-gradient:
-    radial-gradient(ellipse at 8% 8%, var(--color-highlight-gold) 0%, transparent 58%),
-    radial-gradient(ellipse at 92% 92%, var(--color-highlight-blue) 0%, transparent 62%),
-    linear-gradient(110deg, #efdfbc 0%, #d3e1eb 100%);
+    radial-gradient(ellipse at 96% 5%, var(--color-highlight-gold) 0%, transparent 38%),
+    radial-gradient(ellipse at 75% 12%, #d8e2ea 0%, transparent 38%),
+    radial-gradient(ellipse at 94% 95%, #d4e3e8 0%, transparent 38%),
+    radial-gradient(ellipse at 57% 75%, var(--color-highlight-blue) 0%, transparent 46%),
+    linear-gradient(105deg, #f5f1e9 5%, #e7edf0 55%, #f1e5d0 100%);
   --color-danger: #923e28;
   --color-danger-soft: #fff5ef;
   --color-danger-border: #efd8d0;
