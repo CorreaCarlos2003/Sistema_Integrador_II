@@ -1,3 +1,31 @@
+:root {
+  /* Paleta de marca y roles de interfaz. */
+  --color-midnight: #172334;
+  --color-slate-blue: #34475b;
+  --color-steel-blue: #7890a0;
+  --color-warm-cream: #f5f1e9;
+  --color-soft-gold: #d7b46a;
+  --color-ink: var(--color-midnight);
+  --color-text-muted: #526579;
+  --color-brand: var(--color-slate-blue);
+  --color-brand-hover: #26384c;
+  --color-brand-soft: #e9eef2;
+  --color-brand-border: #c8d3dc;
+  --color-canvas: var(--color-warm-cream);
+  --color-sidebar: #faf7f2;
+  --color-surface: #fff;
+  --color-border: #dce2e6;
+  --color-border-strong: #c8d3dc;
+  --color-gold-soft: #fbf4e6;
+  --color-gold-ink: #73561d;
+  --color-danger: #923e28;
+  --color-danger-soft: #fff5ef;
+  --color-danger-border: #efd8d0;
+  --color-success: #27725b;
+  --color-success-soft: #edf5f1;
+  --color-success-border: #cfe5da;
+}
+
 * {
   box-sizing: border-box;
 }

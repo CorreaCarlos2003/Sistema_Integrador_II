@@ -105,8 +105,8 @@
   margin-left: 4px;
   padding: 2px 8px;
   border-radius: 2px;
-  background: #2b2622;
-  color: #f6f3ee;
+  background: var(--color-ink);
+  color: var(--color-canvas);
   font-family: var(--fuente-mono);
   font-size: 10px;
   font-weight: 600;
@@ -579,29 +579,29 @@
   width: 100%;
   min-width: 0;
   gap: 22px;
-  --papel-tarjeta: #fff;
-  --papel: #f7f8f6;
-  --borde: #e5e7e3;
-  --borde-fuerte: #d9dfda;
-  --texto: #252c29;
-  --texto-fuerte: #252c29;
-  --texto-secundario: #626b65;
-  --texto-tenue: #626b65;
-  --teal: #2f6b63;
-  --teal-bg: #edf5f1;
-  --teal-borde: #d7e7df;
+  --papel-tarjeta: var(--color-surface);
+  --papel: var(--color-canvas);
+  --borde: var(--color-border);
+  --borde-fuerte: var(--color-border-strong);
+  --texto: var(--color-ink);
+  --texto-fuerte: var(--color-ink);
+  --texto-secundario: var(--color-text-muted);
+  --texto-tenue: var(--color-text-muted);
+  --teal: var(--color-brand);
+  --teal-bg: var(--color-brand-soft);
+  --teal-borde: var(--color-brand-border);
 }
 .roles--modern .roles__tabs { gap: 8px; flex-wrap: wrap; }
 .roles--modern .roles__tab { margin-right: 8px; padding: 12px; }
 .roles--modern .roles__tab-chip { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 6px; }
 .roles--modern .roles__rol-tabs { border-radius: 10px; flex-wrap: wrap; }
 .roles--modern .roles__rol-tab { border-radius: 7px; min-height: 40px; }
-.roles--modern .roles__badge-total { border-radius: 20px; background: #e7efeb; color: #365c50; font-family: inherit; letter-spacing: 0; }
-.roles--modern .roles__aviso { border-radius: 12px; background: linear-gradient(110deg, #eff6e8, #edf6f2 65%, #f7faf8); }
+.roles--modern .roles__badge-total { border-radius: 20px; background: var(--color-brand-soft); color: var(--color-brand); font-family: inherit; letter-spacing: 0; }
+.roles--modern .roles__aviso { border-radius: 12px; background: linear-gradient(110deg, var(--color-brand-soft), var(--color-brand-soft) 65%, var(--color-sidebar)); }
 .roles--modern .roles__aviso strong { font-family: inherit; font-size: 13px; letter-spacing: 0; }
-.roles--modern .roles__aviso--local { border: 1px solid #d7e7df; }
+.roles--modern .roles__aviso--local { border: 1px solid var(--color-brand-border); }
 .roles--modern .roles__matriz { border-radius: 14px; min-width: 0; padding: 0; }
-.roles--modern .roles__matriz-header { padding: 18px 20px; color: #2f6b63; }
+.roles--modern .roles__matriz-header { padding: 18px 20px; color: var(--color-brand); }
 .roles--modern .roles__matriz-header h2 { font-size: 16px; }
 .roles--modern .roles__tabla th { background: #f8f9f7; font-family: inherit; letter-spacing: 0; text-transform: none; padding: 14px 12px; font-size: 12px; }
 .roles--modern .roles__tabla td { padding: 16px 12px; }
@@ -610,7 +610,7 @@
 .roles--modern .roles__tabla th:not(:first-child):not(:last-child),
 .roles--modern .roles__tabla td:not(:first-child):not(:last-child) { text-align: center; }
 .roles--modern .roles__tabla td:first-child { min-width: 180px; }
-.roles--modern .roles__modulo-icono { border-radius: 9px; background: #edf5f1; }
+.roles--modern .roles__modulo-icono { border-radius: 9px; background: var(--color-brand-soft); }
 .roles--modern .roles__modulo-desc { margin-top: 4px; font-size: 12px; }
 .roles--modern .roles__fila-inactiva { opacity: 1; background: #fafbf9; }
 .roles--modern .roles__pill { border-radius: 20px; line-height: 1.5; }
@@ -633,4 +633,4 @@
 .roles--modern .roles__nota-input { border-radius: 8px; background: #fff; min-height: 40px; }
 .roles--modern .roles__vacio,
 .roles--modern .roles__error { border-radius: 12px; }
-.roles--modern :is(button, select, input):focus-visible { outline: 3px solid #9cc5b8; outline-offset: 3px; }
+.roles--modern :is(button, select, input):focus-visible { outline: 3px solid var(--color-steel-blue); outline-offset: 3px; }

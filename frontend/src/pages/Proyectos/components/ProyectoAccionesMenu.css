@@ -6,7 +6,7 @@
 .proyecto-acciones-menu__btn {
   background: none;
   border: none;
-  color: #94a3b8;
+  color: var(--color-text-muted);
   cursor: pointer;
   padding: 4px;
   display: flex;
@@ -16,8 +16,8 @@
 }
 
 .proyecto-acciones-menu__btn:hover {
-  color: #334155;
-  background-color: #f1f5f9;
+  color: var(--color-ink);
+  background-color: var(--color-brand-soft);
 }
 
 .proyecto-acciones-menu__dropdown {
@@ -26,7 +26,7 @@
   z-index: 20;
   min-width: 180px;
   background: #ffffff;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   padding: 6px;
@@ -49,7 +49,7 @@
   padding: 8px 10px;
   font-size: 13px;
   font-weight: 500;
-  color: #334155;
+  color: var(--color-ink);
   border-radius: 4px;
   cursor: pointer;
 }

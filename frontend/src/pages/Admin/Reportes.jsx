@@ -15,9 +15,9 @@ import SurfaceCard from '../../components/ui/SurfaceCard'
 import { TarjetaStat, Donut } from './components/ReportesVisuales'
 import './Reportes.css'
 
-const COLOR_TEAL = '#2f6b63'
-const COLOR_ORO = '#d9b567'
-const COLOR_OSCURO = '#2b2622'
+const COLOR_TEAL = '#34475b'
+const COLOR_ORO = '#d7b46a'
+const COLOR_OSCURO = '#172334'
 const COLOR_TERRACOTA = '#ab3515'
 
 const COLORES_ROL = { Colaborador: COLOR_TEAL, 'Jefe de Proyecto': COLOR_ORO, Administrador: COLOR_OSCURO }

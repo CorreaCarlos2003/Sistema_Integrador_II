@@ -14,7 +14,7 @@ import "./pages/Login/Login.css";
 function Proximamente() {
   return (
     <div
-      style={{ textAlign: "center", padding: "80px 20px", color: "#6b7785" }}
+      style={{ textAlign: "center", padding: "80px 20px", color: "var(--color-text-muted)" }}
     >
       <p style={{ margin: 0 }}>
         Esta sección aún no tiene pantalla diseñada. Próximamente.

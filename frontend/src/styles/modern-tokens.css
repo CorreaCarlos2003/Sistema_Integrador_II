@@ -1,12 +1,12 @@
-/* Tokens aditivos: no sustituyen las variables que consumen las vistas antiguas. */
+/* Compatibilidad con las vistas modernas. */
 .panel--visual-pilot {
-  --docai-pilot-canvas: #eaeae7;
-  --docai-pilot-sidebar: #f7f7f5;
-  --docai-pilot-surface: #fff;
-  --docai-pilot-border: #e5e7e3;
-  --docai-pilot-ink: #252c29;
-  --docai-pilot-muted: #626b65;
-  --docai-pilot-accent: #2f6b63;
+  --docai-pilot-canvas: var(--color-canvas);
+  --docai-pilot-sidebar: var(--color-sidebar);
+  --docai-pilot-surface: var(--color-surface);
+  --docai-pilot-border: var(--color-border);
+  --docai-pilot-ink: var(--color-ink);
+  --docai-pilot-muted: var(--color-text-muted);
+  --docai-pilot-accent: var(--color-brand);
   --docai-radius-card: 14px;
   --docai-radius-control: 8px;
   --docai-control-height: 40px;

@@ -370,7 +370,7 @@
   height: 8px;
   border-radius: 50%;
   background: var(--teal);
-  box-shadow: 0 0 6px rgba(47, 107, 99, 0.5);
+  box-shadow: 0 0 6px rgba(52, 71, 91, 0.5);
   flex-shrink: 0;
 }
 
@@ -501,15 +501,13 @@
 
 /* Presentación aprobada; se conserva el aislamiento de los selectores. */
 .dash.dash--admin-pilot {
-  --docai-pilot-card-border: #e5e7e3;
-  --docai-pilot-text: #252c29;
-  --docai-pilot-secondary: #626b65;
+  --docai-pilot-card-border: var(--color-border);
+  --docai-pilot-text: var(--color-ink);
+  --docai-pilot-secondary: var(--color-text-muted);
   --docai-pilot-metric-gradient:
-    radial-gradient(ellipse at 93% 8%, #ffe7bc 0%, transparent 49%),
-    radial-gradient(ellipse at 65% 5%, #f8dcec 0%, transparent 54%),
-    radial-gradient(ellipse at 43% 100%, #e8e4fb 0%, transparent 62%),
-    radial-gradient(ellipse at 100% 100%, #e4f2da 0%, transparent 52%),
-    linear-gradient(110deg, #fafbf9, #f4f0fb 60%, #faf7e9);
+    radial-gradient(ellipse at 93% 8%, var(--color-gold-soft) 0%, transparent 49%),
+    radial-gradient(ellipse at 20% 95%, var(--color-brand-soft) 0%, transparent 55%),
+    linear-gradient(110deg, var(--color-surface), var(--color-canvas));
 
   width: 100%;
   max-width: 1160px;
@@ -592,13 +590,13 @@
   width: 34px;
   height: 34px;
   border-radius: 9px;
-  border-color: rgba(47, 107, 99, 0.12);
+  border-color: rgba(52, 71, 91, 0.12);
   background: rgba(255, 255, 255, 0.7);
 }
 
 .dash--admin-pilot .dash__metrica-etiqueta {
   margin: 0 0 5px;
-  color: #59635e;
+  color: var(--color-text-muted);
   font-family: var(--fuente-texto);
   font-size: 11px;
   font-weight: 600;
@@ -725,7 +723,7 @@
 }
 
 .dash--admin-pilot .dash__linea-tiempo::before {
-  background: #e3e9e5;
+  background: var(--color-brand-soft);
 }
 
 .dash--admin-pilot .dash__evento {
@@ -739,7 +737,7 @@
 .dash--admin-pilot .dash__evento-tiempo {
   padding: 4px 8px;
   border-radius: 6px;
-  background: #f5f6f3;
+  background: var(--color-canvas);
   color: var(--docai-pilot-secondary);
   font-family: var(--fuente-texto);
   font-size: 11px;
@@ -761,11 +759,11 @@
 }
 
 .dash--admin-pilot .dash__btn-aceptar:hover:enabled {
-  background: #25564f;
+  background: var(--color-brand-hover);
 }
 
 .dash--admin-pilot .dash__btn-cancelar:hover:enabled {
-  background: #f4f5f2;
+  background: var(--color-canvas);
 }
 
 .dash--admin-pilot .dash__btn-aceptar:disabled,

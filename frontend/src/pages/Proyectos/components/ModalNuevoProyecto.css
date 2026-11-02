@@ -90,7 +90,7 @@
 .form-group label {
   font-size: 14px;
   font-weight: 600;
-  color: #334155;
+  color: var(--color-ink);
 }
 
 .form-group input,
@@ -99,10 +99,10 @@
   width: 100%;
   box-sizing: border-box;
   padding: 12px 16px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   font-size: 14px;
-  background-color: #faf9f5;
+  background-color: var(--color-sidebar);
   outline: none;
   font-family: inherit;
   color: #333;
@@ -112,7 +112,7 @@
 .form-group input:focus,
 .form-group textarea:focus,
 .form-group select:focus {
-  border-color: #a4e5e0;
+  border-color: var(--color-brand-soft);
 }
 
 .form-group textarea {
@@ -129,8 +129,8 @@
 
 .btn-cancel {
   background-color: transparent;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
   padding: 10px 20px;
   border-radius: 4px;
   font-size: 14px;
@@ -149,7 +149,7 @@
 }
 
 .btn-submit {
-  background-color: #f6c844;
+  background-color: var(--color-soft-gold);
   color: #333;
   border: none;
   padding: 10px 20px;
@@ -200,8 +200,8 @@
   height: 56px;
   margin: 0 auto 16px;
   border-radius: 50%;
-  background-color: #dcfce7;
-  color: #16a34a;
+  background-color: var(--color-success-soft);
+  color: var(--color-success);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -240,7 +240,7 @@
 
 .modal-exito-texto {
   margin: 0;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 14px;
   line-height: 1.5;
 }

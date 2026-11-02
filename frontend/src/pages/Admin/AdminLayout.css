@@ -1,22 +1,22 @@
 .panel {
-  --papel: #f6f3ee;
-  --papel-tarjeta: #fdfcfa;
-  --aside-bg: #fcf9f2;
-  --borde: rgba(43, 38, 34, 0.1);
-  --borde-fuerte: rgba(43, 38, 34, 0.15);
-  --texto: #2b2622;
-  --texto-fuerte: #1c1c18;
-  --texto-secundario: #6b6459;
-  --texto-tenue: #7d7568;
-  --texto-nav: #595248;
-  --teal: #2f6b63;
-  --teal-bg: rgba(47, 107, 99, 0.1);
-  --teal-borde: rgba(47, 107, 99, 0.25);
-  --oro: #d9b567;
-  --oro-fuerte: #f4c430;
-  --terracota: #ab3515;
-  --terracota-bg: rgba(171, 53, 21, 0.1);
-  --terracota-borde: rgba(171, 53, 21, 0.2);
+  --papel: var(--color-canvas);
+  --papel-tarjeta: var(--color-surface);
+  --aside-bg: var(--color-sidebar);
+  --borde: var(--color-border);
+  --borde-fuerte: var(--color-border-strong);
+  --texto: var(--color-ink);
+  --texto-fuerte: var(--color-ink);
+  --texto-secundario: var(--color-text-muted);
+  --texto-tenue: var(--color-text-muted);
+  --texto-nav: var(--color-text-muted);
+  --teal: var(--color-brand);
+  --teal-bg: var(--color-brand-soft);
+  --teal-borde: var(--color-brand-border);
+  --oro: var(--color-soft-gold);
+  --oro-fuerte: var(--color-soft-gold);
+  --terracota: var(--color-danger);
+  --terracota-bg: var(--color-danger-soft);
+  --terracota-borde: var(--color-danger-border);
   --fuente-display: 'Alumni Sans', serif;
   --fuente-texto: 'Albert Sans', sans-serif;
   --fuente-mono: 'Space Mono', monospace;
@@ -300,7 +300,7 @@
   gap: 11px;
   border: 0;
   border-radius: 9px;
-  color: #535e57;
+  color: var(--color-text-muted);
   font-family: inherit;
   font-size: 14px;
   line-height: 1.4;
@@ -308,17 +308,17 @@
 }
 
 .panel--visual-pilot:has([data-docai-layout="modern"]) .panel__nav-item svg {
-  color: #737f76;
+  color: var(--color-text-muted);
 }
 
 .panel--visual-pilot:has([data-docai-layout="modern"]) .panel__nav-item:hover {
-  background: #eeefec;
+  background: var(--color-canvas);
   color: var(--docai-pilot-ink);
 }
 
 .panel--visual-pilot:has([data-docai-layout="modern"]) .panel__nav-item--activo,
 .panel--visual-pilot:has([data-docai-layout="modern"]) .panel__nav-item--activo:hover {
-  background: #e3eee8;
+  background: var(--color-brand-soft);
   color: var(--docai-pilot-accent);
   font-weight: 600;
   box-shadow: none;
@@ -338,8 +338,8 @@
 }
 
 .panel--visual-pilot:has([data-docai-layout="modern"]) .panel__avatar {
-  border-color: #dce4dd;
-  background: #e9eeea;
+  border-color: var(--color-border);
+  background: var(--color-brand-soft);
   color: var(--docai-pilot-accent);
 }
 
@@ -393,7 +393,7 @@
   background: #fff;
   border-color: var(--docai-pilot-border);
   border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(30, 45, 35, 0.1);
+  box-shadow: 0 8px 30px rgba(23, 35, 52, 0.1);
   overflow-wrap: anywhere;
 }
 

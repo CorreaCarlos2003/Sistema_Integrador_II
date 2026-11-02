@@ -1,9 +1,9 @@
 .documentos-listado {
-  border: 1px solid var(--docai-pilot-border, #e5e7e3);
+  border: 1px solid var(--docai-pilot-border, var(--color-border));
   border-radius: var(--docai-radius-card, 14px);
   background: var(--docai-pilot-surface, #fff);
   overflow: hidden;
-  color: var(--docai-pilot-ink, #252c29);
+  color: var(--docai-pilot-ink, var(--color-ink));
 }
 
 .documentos-listado__scroll {
@@ -11,7 +11,7 @@
 }
 
 .documentos-listado__scroll:focus-visible {
-  outline: 2px solid var(--docai-pilot-accent, #2f6b63);
+  outline: 2px solid var(--docai-pilot-accent, var(--color-brand));
   outline-offset: -2px;
 }
 
@@ -30,14 +30,14 @@
 .documentos-listado__col-acciones { width: 260px; }
 
 .documentos-listado__tabla thead {
-  background: #f7f8f5;
-  color: var(--docai-pilot-muted, #626b65);
+  background: var(--color-canvas);
+  color: var(--docai-pilot-muted, var(--color-text-muted));
 }
 
 .documentos-listado__tabla th,
 .documentos-listado__tabla td {
   padding: 17px 12px;
-  border-bottom: 1px solid var(--docai-pilot-border, #e5e7e3);
+  border-bottom: 1px solid var(--docai-pilot-border, var(--color-border));
   vertical-align: middle;
 }
 
@@ -55,7 +55,7 @@
 .documentos-listado__tabla tbody tr:last-child > * { border-bottom: 0; }
 
 .documentos-listado__fila:hover,
-.documentos-listado__fila:focus-within { background: #fafbf8; }
+.documentos-listado__fila:focus-within { background: var(--color-sidebar); }
 
 .documentos-listado__documento {
   display: flex;
@@ -73,7 +73,7 @@
   border: 1px solid #e1e9e2;
   border-radius: 9px;
   background: #edf3ee;
-  color: var(--docai-pilot-accent, #2f6b63);
+  color: var(--docai-pilot-accent, var(--color-brand));
 }
 
 .documentos-listado__archivo-info { min-width: 0; }
@@ -88,7 +88,7 @@
 .documentos-listado__version {
   display: block;
   margin-top: 3px;
-  color: var(--docai-pilot-muted, #626b65);
+  color: var(--docai-pilot-muted, var(--color-text-muted));
   font-size: 11px;
   font-weight: 400;
   line-height: 1.5;
@@ -100,7 +100,7 @@
 }
 
 .documentos-listado__fecha {
-  color: var(--docai-pilot-muted, #626b65);
+  color: var(--docai-pilot-muted, var(--color-text-muted));
   font-size: 12px;
   line-height: 1.5;
 }
@@ -110,10 +110,10 @@
   align-items: center;
   gap: 6px;
   padding: 4px 8px;
-  border: 1px solid #d8e9df;
+  border: 1px solid var(--color-brand-border);
   border-radius: 999px;
-  background: #edf5f1;
-  color: #2f6b63;
+  background: var(--color-brand-soft);
+  color: var(--color-brand);
   font-size: 11px;
   font-weight: 500;
   line-height: 1.4;
@@ -128,9 +128,9 @@
 }
 
 .documentos-listado__badge--pendiente {
-  border-color: #efe1bc;
-  background: #fff8e9;
-  color: #805d18;
+  border-color: var(--color-gold-soft);
+  background: var(--color-gold-soft);
+  color: var(--color-gold-ink);
 }
 
 .documentos-listado__acciones-titulo { text-align: right; }
@@ -160,7 +160,7 @@
 .documentos-listado__acciones .documentos-listado__eliminar:hover:enabled {
   border-color: #efd8d0;
   background: #fff2ed;
-  color: #ab3515;
+  color: var(--color-danger);
 }
 
 .documentos-listado__estado {
@@ -179,19 +179,19 @@
   height: 48px;
   border-radius: 14px;
   background: #f1f3ee;
-  color: var(--docai-pilot-muted, #626b65);
+  color: var(--docai-pilot-muted, var(--color-text-muted));
 }
 
 .documentos-listado__estado--error .documentos-listado__estado-icono {
-  background: #fff8e9;
-  color: #805d18;
+  background: var(--color-gold-soft);
+  color: var(--color-gold-ink);
 }
 
 .documentos-listado__estado strong { font-size: 15px; font-weight: 600; }
 .documentos-listado__estado p {
   max-width: 480px;
   margin: 0;
-  color: var(--docai-pilot-muted, #626b65);
+  color: var(--docai-pilot-muted, var(--color-text-muted));
   font-size: 13px;
   line-height: 1.6;
   overflow-wrap: anywhere;
@@ -199,7 +199,7 @@
 
 .documentos-listado__footer {
   padding: 13px 20px;
-  border-top: 1px solid var(--docai-pilot-border, #e5e7e3);
-  color: var(--docai-pilot-muted, #626b65);
+  border-top: 1px solid var(--docai-pilot-border, var(--color-border));
+  color: var(--docai-pilot-muted, var(--color-text-muted));
   font-size: 12px;
 }
