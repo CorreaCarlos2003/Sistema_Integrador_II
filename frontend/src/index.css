@@ -18,6 +18,14 @@
   --color-border-strong: #c8d3dc;
   --color-gold-soft: #fbf4e6;
   --color-gold-ink: #73561d;
+  --color-highlight-gold: #e5ca91;
+  --color-highlight-blue: #c6d9e7;
+  --color-highlight-base: #f1ede6;
+  --color-highlight-border: #b8c9d6;
+  --color-highlight-gradient:
+    radial-gradient(ellipse at 8% 8%, var(--color-highlight-gold) 0%, transparent 58%),
+    radial-gradient(ellipse at 92% 92%, var(--color-highlight-blue) 0%, transparent 62%),
+    linear-gradient(110deg, #efdfbc 0%, #d3e1eb 100%);
   --color-danger: #923e28;
   --color-danger-soft: #fff5ef;
   --color-danger-border: #efd8d0;

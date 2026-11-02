@@ -4,7 +4,7 @@
 .inicio-usuario .dash__card-encabezado h2 { font-size: 17px; font-weight: 600; color: var(--color-ink); }
 .inicio-usuario .dash__punto-brillante { box-shadow: none; background: var(--color-brand); }
 .inicio-usuario .dash__eyebrow { font-family: inherit; font-size: 12px; letter-spacing: 0; text-transform: none; }
-.inicio-usuario .dash__invitaciones-card { background: linear-gradient(110deg,var(--color-gold-soft),var(--color-brand-soft) 65%,var(--color-surface)); border-color: var(--color-brand-border); }
+.inicio-usuario .dash__invitaciones-card { background: linear-gradient(110deg,var(--color-highlight-gold),var(--color-highlight-blue) 65%,var(--color-highlight-base)); border-color: var(--color-highlight-border); }
 .inicio-usuario .dash__badge { padding: 4px 10px; border-radius: 20px; font-family: inherit; letter-spacing: 0; text-transform: none; font-size: 12px; }
 .inicio-usuario .dash__badge--alerta { background: #fff9e9; color: var(--color-gold-ink); border-color: #eadebd; }
 .inicio-usuario .dash__fila-invitacion { padding: 20px 0; gap: 20px; border-color: var(--color-brand-border); }
