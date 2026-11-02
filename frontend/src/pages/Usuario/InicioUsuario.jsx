@@ -43,8 +43,8 @@ export default function InicioUsuario({ sesion }) {
   return (
     <div className="dash inicio-usuario" data-docai-layout="modern">
       <PageHeader title={`¡Hola, ${nombre}!`} description={esJefeDeProyecto
-        ? 'Aquí tienes tus proyectos a cargo y las invitaciones pendientes en DocAI.'
-        : 'Aquí tienes tus proyectos asignados y las invitaciones pendientes en DocAI.'} />
+        ? 'Aquí tienes tus proyectos a cargo y las invitaciones pendientes en Proyecta TI.'
+        : 'Aquí tienes tus proyectos asignados y las invitaciones pendientes en Proyecta TI.'} />
 
       <InvitacionesProyectos sesion={sesion} visualModerna />
 

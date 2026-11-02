@@ -99,7 +99,7 @@ export default function Reportes() {
     const params = new URLSearchParams({ desde, hasta })
     const enlace = document.createElement('a')
     enlace.href = `/reportes/exportar?${params.toString()}`
-    enlace.download = 'reporte_docai.csv'
+    enlace.download = 'reporte_proyecta_ti.csv'
     document.body.appendChild(enlace)
     enlace.click()
     document.body.removeChild(enlace)

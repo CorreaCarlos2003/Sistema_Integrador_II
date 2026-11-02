@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import './AdminLayout.css'
-import DocAILogo from '../../components/ui/DocAILogo'
+import ProyectaLogo from '../../components/ui/ProyectaLogo'
 import '../../styles/modern-tokens.css'
 import {
   IconNavInicio,
@@ -32,7 +32,7 @@ export default function AdminLayout({ activo, onNavegar, sesion, onCerrarSesion,
     <div className={pilotoVisual ? 'panel panel--visual-pilot' : 'panel'}>
       <aside className="panel__sidebar">
         <div className="panel__marca">
-          <DocAILogo size={38} />
+          <ProyectaLogo />
         </div>
 
         <p className="panel__nav-etiqueta">Navegación</p>

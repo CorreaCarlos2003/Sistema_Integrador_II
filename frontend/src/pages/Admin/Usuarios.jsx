@@ -328,7 +328,7 @@ export default function Usuarios({ sesion }) {
 
   return (
     <div className="usuarios usuarios--modern" data-docai-layout="modern">
-      <PageHeader title="Gestión de Usuarios" description="Administra las cuentas, roles y accesos de todos los usuarios de DocAI."
+      <PageHeader title="Gestión de Usuarios" description="Administra las cuentas, roles y accesos de todos los usuarios de Proyecta TI."
         actions={<Button variant="primary" onClick={() => abrirFormulario({ modo: 'crear', datos: { ...VACIO } })}><IconMas />Nuevo Usuario</Button>} />
 
       <nav className="usuarios__tabs" aria-label="Vistas de usuarios">

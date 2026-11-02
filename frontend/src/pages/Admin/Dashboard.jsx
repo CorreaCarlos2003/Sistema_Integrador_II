@@ -54,7 +54,7 @@ export default function Dashboard({ sesion }) {
         titleClassName="dash__saludo"
         descriptionClassName="dash__subtitulo"
         title={`¡Hola, ${nombre}!`}
-        description="Aquí tienes un resumen de la actividad reciente en DocAI."
+        description="Aquí tienes un resumen de la actividad reciente en Proyecta TI."
       />
 
       <InvitacionesProyectos sesion={sesion} />

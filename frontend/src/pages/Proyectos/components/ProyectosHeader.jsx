@@ -20,7 +20,7 @@ export default function ProyectosHeader({
     <header className="proyectos-header">
       <PageHeader
         title="Proyectos"
-        description="Administra todos los proyectos del sistema, sus responsables y su actividad operativa dentro de las bóvedas seguras DocAI."
+        description="Administra todos los proyectos del sistema, sus responsables y su actividad operativa dentro de las bóvedas seguras Proyecta TI."
         actions={
           <Button variant="primary" onClick={onNuevoProyecto}>
             <span aria-hidden="true">+</span> Nuevo Proyecto

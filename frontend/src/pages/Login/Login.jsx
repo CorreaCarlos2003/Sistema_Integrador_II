@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import './Login.css'
-import DocAILogo from '../../components/ui/DocAILogo'
+import ProyectaLogo from '../../components/ui/ProyectaLogo'
 import ojoIcono from '../../assets/login/ojo-icono.svg'
 import Button from '../../components/ui/Button'
 import FormField from '../../components/ui/FormField'
@@ -99,8 +99,8 @@ export default function Login({ onLoginExitoso }) {
   return (
     <div className="login login--modern">
       <main className="login__main">
-        <section className="login__card" aria-label="Acceso a DocAI">
-          <div className="login__brand"><DocAILogo size={32} /></div>
+        <section className="login__card" aria-label="Acceso a Proyecta TI">
+          <div className="login__brand"><ProyectaLogo /></div>
           <div className="login__marca">
             <p className="login__eyebrow"><span />Tu espacio de trabajo inteligente</p>
             <h1 className={`login__titulo ${olvido ? 'login__titulo--recovery' : ''}`}>
@@ -182,7 +182,7 @@ export default function Login({ onLoginExitoso }) {
           )}
 
           {!olvido && <p className="login__ayuda">¿Problemas para ingresar? <button type="button" className="login__olvido" disabled={cargando} onClick={abrirRecuperacion}>Recupera tu acceso</button></p>}
-          <footer className="login__pie"><span>© DocAI · Tu conocimiento, conectado.</span></footer>
+          <footer className="login__pie"><span>© Proyecta TI Solutions · Tu conocimiento, conectado.</span></footer>
         </section>
         <LoginVisual />
       </main>

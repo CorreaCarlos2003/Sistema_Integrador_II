@@ -28,7 +28,7 @@ export default function RecuperarAcceso({ correo, onCorreoChange, onSubmit, onVo
       <FormField htmlFor="correo" label="Correo electrónico">
         <input id="correo" className="login__input" type="email" placeholder="nombre@empresa.com" value={correo} onChange={(e) => onCorreoChange(e.target.value)} required autoComplete="username" disabled={cargando} autoFocus aria-describedby="recovery-help" />
       </FormField>
-      <p className="login-recovery__hint" id="recovery-help">Utiliza el correo asociado a tu cuenta de DocAI.</p>
+      <p className="login-recovery__hint" id="recovery-help">Utiliza el correo asociado a tu cuenta de Proyecta TI.</p>
       {error && <p className="login__error" role="alert">{error}</p>}
       {cargando && <p className="login-recovery__progress" role="status">Procesando tu solicitud…</p>}
       <Button variant="primary" className="login__boton" type="submit" disabled={cargando}>{cargando ? 'Enviando...' : 'Enviar solicitud'}</Button>

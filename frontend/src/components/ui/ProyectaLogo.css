@@ -1,0 +1,7 @@
+.proyecta-logo {
+  display: block;
+  flex-shrink: 0;
+  width: min(232px, 100%);
+  height: auto;
+  object-fit: contain;
+}

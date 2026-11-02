@@ -14,7 +14,7 @@ export default function UsuarioFormulario({ formulario, guardando, error, onChan
   const cambiar = (campo) => (e) => onChange({ ...datos, [campo]: e.target.value })
   return (
     <ModalShell open onClose={onClose} title={crear ? 'Nuevo usuario' : 'Editar usuario'}
-      description={crear ? 'Crea una cuenta de acceso a DocAI.' : 'Actualiza los datos y el rol de esta cuenta.'}
+      description={crear ? 'Crea una cuenta de acceso a Proyecta TI.' : 'Actualiza los datos y el rol de esta cuenta.'}
       icon={<IconUsuarios size={20} />} className="usuario-formulario" busy={guardando} dismissOnBackdrop
       initialFocusRef={nombreRef} returnFocusRef={returnFocusRef}
       footer={<><Button onClick={onClose} disabled={guardando}>Cancelar</Button><Button type="submit" form={id} variant="primary" disabled={guardando}>{guardando ? 'Guardando...' : crear ? 'Crear usuario' : 'Guardar cambios'}</Button></>}>

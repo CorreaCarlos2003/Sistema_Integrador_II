@@ -97,7 +97,7 @@ export default function ChatMensajes({ detalle, cargandoDetalle, ocupado, ragLis
               </div>
             ) : (
               <div key={mensaje.id} className={`chat-proyecto__mensaje-asistente ${mensaje.tipo === 'comparacion' ? 'chat-proyecto__mensaje-asistente--comparacion' : ''}`}>
-                <div className="chat-proyecto__remitente"><IconChispa />DocAI</div>
+                <div className="chat-proyecto__remitente"><IconChispa />Proyecta TI</div>
                 {mensaje.tipo === 'comparacion' ? <ComparacionVista mensaje={mensaje} /> : <TextoConCitas mensaje={mensaje} />}
                 {mensaje.citas?.length > 0 && (
                   <div className={`chat-proyecto__fragmentos ${mensaje.tipo === 'comparacion' ? 'chat-proyecto__fragmentos--comparacion' : ''}`}>
@@ -117,7 +117,7 @@ export default function ChatMensajes({ detalle, cargandoDetalle, ocupado, ragLis
                 )}
               </div>
             ))}
-            {ocupado && <div className="chat-proyecto__escribiendo">DocAI está procesando la solicitud...</div>}
+            {ocupado && <div className="chat-proyecto__escribiendo">Proyecta TI está procesando la solicitud...</div>}
             <div ref={finMensajesRef} />
           </div>
   )

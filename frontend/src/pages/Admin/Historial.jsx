@@ -165,7 +165,7 @@ export default function Historial() {
 
     const enlace = document.createElement('a')
     enlace.href = `/historial/exportar?${params.toString()}`
-    enlace.download = 'historial_docai.csv'
+    enlace.download = 'historial_proyecta_ti.csv'
     document.body.appendChild(enlace)
     enlace.click()
     document.body.removeChild(enlace)
